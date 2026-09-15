@@ -31,13 +31,15 @@ domain entities** (from the KG) and the answer can only be produced by
 - `bridge/` — adapter code: `kg_context_exporter.py` (GraphGen KG →
   domain-context JSON/text), `prompts/predict_workflow_kg.py`
   (KG-grounded `PREDICT_WORKFLOW` template), `toolgrad_patch.py`
-  (applies the patch without editing the ToolGrad checkout),
-  `tests/` (keyless unit tests).
+  (Phase 1 patch), `toolkg_builder.py` (ToolKG over the API catalog),
+  `kg_sampler.py` (KG-neighborhood sampling), `toolkg_patch.py`
+  (Phase 2 patch), `tests/` (keyless unit tests).
 
 ## Status
 
 - Phase 0 (recon spike): done — `docs/phase0-recon.md`.
 - Phase 1 (KG→ToolGrad bridge): done — `docs/phase1-bridge.md`.
+- Phase 2 (ToolKG + guided sampling): done — `docs/phase2-toolkg.md`.
   Tests: `python3 bridge/tests/run_tests.py` (needs the ToolGrad venv +
   `networkx`; no API keys, no Ray).
 
