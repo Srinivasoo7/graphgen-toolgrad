@@ -1,5 +1,16 @@
 # Phase 2 — ToolKG: API knowledge graph + guided sampling
 
+> **2026-09-15 update (v0.5.0):** the monkeypatch described below
+> (`bridge/toolkg_patch.py`) has been **retired**. The integration now uses
+> native seams on Sri's ToolGrad fork
+> (`Srinivasoo7/toolgrad@integrate/graphgen-toolgrad`):
+> `discover_mcp_tools()` (public catalog discovery),
+> `get_mcp_apis(..., sampler=...)`, `sample_apis_or_end(..., api_sampler=...)`,
+> and `create_graph_on_mcp(..., api_sampler=...)`. The bridge's
+> `bridge/toolkg_sampler.py` builds the ToolKG from `discover_mcp_tools`
+> and returns a `sampler(tools, num_apis)` closure — no private API touched.
+> See the README's Quick start. The rest of this doc is historical.
+
 Date: 2026-09-15. All claims below are from code actually read and
 commands actually run on this box (2 vCPUs, 7.7 GB RAM, no GPU).
 `GOOGLE_API_KEY` / `OPENAI_API_KEY` are absent, so the live LLM loop is

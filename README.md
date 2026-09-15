@@ -1,14 +1,22 @@
 # graphgen-toolgrad
 
-A bridge between two synthetic-data projects:
+A bridge between two synthetic-data projects, built on Sri's integration
+forks (branch `integrate/graphgen-toolgrad` on each):
 
-- **[GraphGen](https://github.com/InternScience/GraphGen)** — extracts a knowledge
-  graph from your documents, then synthesizes SFT training data from it
-  (atomic / multi-hop / multi-choice QA, fill-in-blank, CoT).
-- **[ToolGrad](https://github.com/zhongyi-zhou/toolgrad)** (ACL'26 Findings) —
-  answer-first tool-use dataset generation: build a *valid, executable* API
-  chain first, then synthesize the user query and assistant response around it.
-  Runs on ToolBench APIs or any MCP server.
+- **[GraphGen](https://github.com/Srinivasoo7/GraphGen)** (fork of
+  InternScience/GraphGen) — extracts a knowledge graph from your documents,
+  then synthesizes SFT training data from it. The fork registers a new
+  `trace_qa` operator: ToolGrad execution traces → tool-grounded QA pairs.
+- **[ToolGrad](https://github.com/Srinivasoo7/toolgrad)** (fork of
+  zhongyi-zhou/toolgrad, ACL'26 Findings) — answer-first tool-use dataset
+  generation: build a *valid, executable* API chain first, then synthesize
+  the user query and assistant response around it. The fork adds two public
+  seams: an optional `kg_context` variable on `PREDICT_WORKFLOW` (threaded
+  through `ToolGradState`), and a pluggable `sampler` on the MCP sampling
+  path.
+
+No monkeypatching: every integration point is a real, upstream-PR-able seam
+in the forks.
 
 ## The problem this solves
 
@@ -30,29 +38,33 @@ domain entities** (from the KG) and the answer can only be produced by
 - `docs/` — per-phase recon notes and design docs.
 - `bridge/` — adapter code:
   - Phase 1: `kg_context_exporter.py` (GraphGen KG → domain-context
-    JSON/text), `prompts/predict_workflow_kg.py` (KG-grounded
-    `PREDICT_WORKFLOW` template), `toolgrad_patch.py` (prompt patch).
+    JSON/text), consumed via the fork's native `kg_context` seam.
   - Phase 2: `toolkg_builder.py` (ToolKG over the API catalog),
-    `kg_sampler.py` (KG-neighborhood sampling), `toolkg_patch.py`
-    (sampling patch).
+    `kg_sampler.py` (KG-neighborhood sampling), `toolkg_sampler.py`
+    (builds the ToolKG from the fork's public `discover_mcp_tools` and
+    returns a `sampler` callable for the fork's sampling seam).
   - Phase 3: `trace_to_qa.py` (trace → tool-grounded QA operator),
-    `chain_verifier.py` (executable-chain verification).
+    `chain_verifier.py` (executable-chain verification). The operator is
+    also registered natively in the GraphGen fork as
+    `graphgen.operators.trace_qa.TraceQAService`.
   - Phase 4: `refinement_loop.py` (generate → verify → filter → refine,
     run ledger), `sft_mix.py` (SFT dataset assembly + dataset card),
     `eval_harness.py` (keyless dataset metrics).
-  - `tests/` — keyless unit tests (`python3 bridge/tests/run_tests.py`).
+  - `tests/` — keyless unit tests (`python3 bridge/tests/run_tests.py`),
+    including `test_upstream_contract.py`, which pins the forks' seams
+    and fails loudly if they ever move.
 
 ## The pipeline
 
 ```
-GraphGen KG ──► kg_context ──┬──► PREDICT_WORKFLOW (ToolGrad inverse predictor)
-                             │         now grounds queries in real entities
-API catalog ──► ToolKG ──────┴──► KG-neighborhood sampling (replaces random)
-                                        │
+GraphGen KG ──► kg_context ──┬──► PREDICT_WORKFLOW's {kg_context} (fork-native;
+                             │         ToolGradState.kg_context)
+API catalog ──► ToolKG ──────┴──► sampler(tools, num_apis) ──► get_mcp_apis
+                                        │                        (fork seam)
 ToolGrad loop (executes real chains) ───┘
         │
         ▼  ExecutionTracer / workflow samples
-TraceToQAOperator ──► tool-grounded QA pairs (ChatML)
+TraceToQAOperator / TraceQAService ──► tool-grounded QA pairs (ChatML)
         │
 chain_verifier + quality filters + textual-gradient refinement
         │
@@ -66,23 +78,18 @@ sft_mix.jsonl (train/valid) + dataset card + eval metrics
 git clone https://github.com/Srinivasoo7/graphgen-toolgrad
 cd graphgen-toolgrad
 
-# 1. Fetch the pinned upstreams (GraphGen @ 3a3eb097, ToolGrad @ c9544f84)
-#    into ../vendor and pip-install them editable. Re-runnable.
-bash scripts/setup_upstreams.sh
-
-# 2. Python deps (pinned; measured green on Python 3.12.3)
+# Python deps (pinned SHAs in pyproject.toml). This installs the bridge
+# plus both integration forks from git — no separate upstream setup.
 python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt   # networkx + langchain-core + langchain-mcp-adapters
-pip install -e .                  # the bridge package itself
+pip install -e .
 
-# 3. Run the suite (no API keys, no Ray)
+# Run the suite (no API keys, no Ray)
 python3 bridge/tests/run_tests.py
 ```
 
-Without the optional deps the suite degrades gracefully: the runner reports
-`SKIP` per module/test instead of crashing (bare stdlib: 3 passed, 17
-skipped, 0 failed). Without ToolGrad installed, the patch modules and the
-upstream contract test skip — everything else still runs.
+Without the forks installed, the suite degrades gracefully: the runner
+reports `SKIP` per module/test instead of crashing (bare stdlib: 1 passed,
+15 skipped, 0 failed).
 
 ## Status
 
@@ -93,48 +100,66 @@ upstream contract test skip — everything else still runs.
 - Phase 4 (unified refinement/SFT/eval loop): done — `docs/phase4-unified-loop.md`.
 - Ponytail revalidation: done — `docs/ponytail-review.md`.
 
-Tests: **74/74 green**, keyless — `python3 bridge/tests/run_tests.py`.
+Tests: **71/71 green**, keyless — `python3 bridge/tests/run_tests.py`.
 Measured in the pinned environment (Python 3.12.3, `requirements.txt`
-exact pins, ToolGrad @ `c9544f84` installed editable); earlier docs saying
-"70/70" predate the 4 upstream-contract tests added in this pass.
+exact pins, ToolGrad fork @ `f4aaff10` installed editable); earlier "70/70"
+and "74/74" claims predate the seam migration (the monkeypatch tests were
+replaced by native seam/sampler tests).
 The live end-to-end (real traces → real QA → SFT) needs `GOOGLE_API_KEY`;
 the exact command sequence is in `docs/phase4-unified-loop.md`.
 
 ## Known limitations
 
-- **Runtime monkeypatching is the integration mechanism** — deliberate and
-  documented, but fragile: `toolgrad_patch` swaps `PREDICT_WORKFLOW` /
-  `create_workflow_updater`, and `toolkg_patch` swaps `get_mcp_apis` and
-  calls the *private* `toolgrad.utils.mcp._wrap_with_path_prefix`. A ToolGrad
-  refactor of those call sites will break the bridge.
-  `bridge/tests/test_upstream_contract.py` is the tripwire: re-run the suite
-  after any upstream SHA bump and it fails loudly on exactly what moved.
-- **GraphGen is format-compatible, not plugged in.** The bridge reads
-  GraphGen's networkx GraphML output and emits ChatML/ShareGPT-shaped rows,
-  but `TraceToQAOperator` is not registered in GraphGen's Ray engine. The
-  registration path (needs a Ray-capable environment — `ray.init()` cannot
-  complete in this sandbox): 1) subclass `graphgen.bases.BaseOperator`
-  (the operator already mirrors its `process(batch) -> (results, stats)`
-  shape); 2) place it under `graphgen/operators/generate/`; 3) wire it into
-  a Ray pipeline script.
+- **The seams live on Sri's forks, not upstream.** `integrate/graphgen-toolgrad`
+  on each fork is a small, upstream-PR-able diff (3 commits on toolgrad,
+  1 on GraphGen), but until upstream merges equivalents, the bridge depends
+  on the forks. `main` on both forks stays a clean upstream mirror.
+  `bridge/tests/test_upstream_contract.py` pins the seam shapes and fails
+  loudly if a fork rebase ever moves them.
+- **GraphGen's Ray path is execution-unverified.** `TraceQAService` is a
+  real registered operator (`graphgen.operators["trace_qa"]`, subclassing
+  `BaseOperator`, standard `(results, meta_updates)` contract), and its
+  `process()` was exercised directly — but `ray.init()` cannot complete in
+  this sandbox, so the Ray pipeline path still needs a first real run.
 - **Live LLM required for real data.** Everything here is validated
   keylessly on fixtures; generating actual KG-grounded tool-use data needs
   `GOOGLE_API_KEY` (or `OPENAI_API_KEY` / Vertex ADC) for ToolGrad's
   generation loop.
 
-## Quick start (Phase 1)
+## Quick start (Phase 1 + 2, native seams)
 
 ```python
-from bridge import kg_context_exporter, toolgrad_patch
+from toolgrad.modules import ToolGradState
+from toolgrad.prebuilt import create_graph_on_mcp
+from toolgrad.utils import mcp
+from bridge import kg_context_exporter, toolkg_sampler
 
-# 1. Load a GraphGen KG (networkx backend GraphML) and export context
-graph = kg_context_exporter.load_from_working_dir("/path/to/graphgen/working_dir")
-ctx_text = kg_context_exporter.render_kg_context(
+# 1. Load a GraphGen KG (networkx GraphML) and export domain context
+graph = kg_context_exporter.load_from_working_dir("/path/to/kg")
+kg_context = kg_context_exporter.render_kg_context(
     kg_context_exporter.export_kg_context(graph))
 
-# 2. Patch ToolGrad before building/invoking its graph
-toolgrad_patch.apply_kg_patch(ctx_text)
-# ... run the ToolGrad loop as usual; inverse_predictor now grounds
-# queries/responses in the KG entities ...
-toolgrad_patch.remove_kg_patch()
+# 2. Build the ToolKG once, plug its sampler into the fork's seam
+toolkg = toolkg_sampler.build_toolkg_for_mcp()
+app = create_graph_on_mcp(
+    sample_seed=123, num_apis=5, num_iterations=3,
+    mcp_dict=mcp.get_default_mcp_dict(),
+    api_sampler=toolkg_sampler.make_toolkg_sampler(toolkg),  # native seam
+)
+
+# 3. KG context travels in graph state — inverse_predictor grounds
+#    queries/responses in the KG entities via the fork's {kg_context}
+initial = ToolGradState(workflow_cur=None, api_proposals=None,
+                        api_reports=None, api_selection=None, step=0,
+                        sampled_apis=[], kg_context=kg_context)
+final_state = app.invoke(initial)
+```
+
+Or, inside a GraphGen pipeline, use the registered operator directly:
+
+```python
+from graphgen.operators import operators
+TraceQAService = operators["trace_qa"]
+op = TraceQAService(working_dir="cache", kg_context=ctx_dict)
+results, meta = op.process([{"sample": workflow_dict, "tracer": tracer_dict}])
 ```

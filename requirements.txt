@@ -1,11 +1,13 @@
 # Pinned environment for graphgen-toolgrad.
 #
-# Measured green (70 tests + 4 contract tests): Python 3.12.3, via
+# Measured green: Python 3.12.3, via
 #   <venv>/bin/python bridge/tests/run_tests.py
 # from the repo root. No API keys, no Ray needed for the suite.
 #
-# ToolGrad and GraphGen are NOT pip packages: fetch them from git at the
-# pinned SHAs with:  bash scripts/setup_upstreams.sh
+# Both integration forks install from git (pinned SHAs); `pip install -e .`
+# pulls them automatically via pyproject.toml.
 networkx==3.6.1                # core dep: KG context export, ToolKG
-langchain-core==1.6.3          # ChatPromptTemplate objects; 3 template tests SKIP without it
-langchain-mcp-adapters==0.3.2  # live MCP tool discovery in toolkg_patch
+toolgrad @ git+https://github.com/Srinivasoo7/toolgrad@f4aaff100a4afcc2d0ce6e50438cc47b5a0929cc
+graphg @ git+https://github.com/Srinivasoo7/GraphGen@0fa7c7ebc92d458231dc5687f00771f78842516c
+langchain-core==1.6.3          # (via toolgrad) ChatPromptTemplate objects
+langchain-mcp-adapters==0.3.2  # (via toolgrad) live MCP tool discovery

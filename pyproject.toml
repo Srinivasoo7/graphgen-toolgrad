@@ -4,22 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "graphgen-toolgrad"
-version = "0.4.0"
+version = "0.5.0"
 description = "Knowledge-grounded tool-use SFT data factory: GraphGen KG context + ToolGrad executable tool chains"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
 dependencies = [
+    # Integration forks (branch integrate/graphgen-toolgrad, pinned SHAs).
+    # pip installs them from git; no PyPI releases exist.
+    "toolgrad @ git+https://github.com/Srinivasoo7/toolgrad@f4aaff100a4afcc2d0ce6e50438cc47b5a0929cc",
+    "graphg @ git+https://github.com/Srinivasoo7/GraphGen@0fa7c7ebc92d458231dc5687f00771f78842516c",
     "networkx>=3.0",
-]
-
-# ToolGrad and GraphGen are intentionally NOT dependencies: neither ships a
-# PyPI release, and this repo never vendors upstream code. Install them from
-# git at the pinned SHAs with:  bash scripts/setup_upstreams.sh
-[project.optional-dependencies]
-full = [
-    "langchain-core>=1.6",          # ChatPromptTemplate objects (template tests)
-    "langchain-mcp-adapters>=0.3",  # live MCP tool discovery (toolkg_patch)
 ]
 
 [tool.setuptools.packages.find]

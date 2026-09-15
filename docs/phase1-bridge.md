@@ -1,5 +1,13 @@
 # Phase 1 — KG-grounded ToolGrad bridge
 
+> **2026-09-15 update (v0.5.0):** the monkeypatch described below
+> (`bridge/toolgrad_patch.py`, `bridge/prompts/predict_workflow_kg.py`) has
+> been **retired**. The integration now uses a native seam on Sri's ToolGrad
+> fork (`Srinivasoo7/toolgrad@integrate/graphgen-toolgrad`): `PREDICT_WORKFLOW`
+> carries a `{kg_context}` variable, `create_workflow_updater(kg_context="")`
+> binds it, and `ToolGradState.kg_context` threads it from graph state. See
+> the README's Quick start. The rest of this doc is historical.
+
 Date: 2026-09-14/15. All claims below are from code actually read and
 commands actually run on this box (2 vCPUs, 7.7 GB RAM, no GPU).
 `GOOGLE_API_KEY` / `OPENAI_API_KEY` are absent, so the live LLM loop is

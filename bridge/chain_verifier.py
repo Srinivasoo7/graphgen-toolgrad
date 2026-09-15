@@ -10,9 +10,9 @@ Two executors:
   interface (``call(tool_name, tool_input)``) with registered input
   schemas and canned handlers. Used by tests and by offline validation.
 - ``ToolGradExecutor`` — live path. Wraps real ToolGrad tools
-  (``name -> StructuredTool``; reuse ``toolkg_patch._TOOLS_BY_NAME`` or
-  rebuild via ``build_toolkg_for_mcp``) and calls
-  ``tool.invoke(tool_input)`` — the same call the executor agent makes.
+  (``name -> StructuredTool``; from the fork's ``discover_mcp_tools``) and
+  calls ``tool.invoke(tool_input)`` — the same call the executor agent
+  makes.
 
 ``verify_qa(qa, executor)`` returns::
 
@@ -104,7 +104,8 @@ class ToolGradExecutor:
 
     ``tools_by_name`` maps tool name -> tool object exposing
     ``.invoke(tool_input)`` (langchain ``StructuredTool``, incl. the MCP
-    tools wrapped by ``toolkg_patch``). No LLM is involved at this layer.
+    tools discovered via the fork's ``discover_mcp_tools``). No LLM is
+    involved at this layer.
     """
 
     def __init__(self, tools_by_name: Dict[str, Any]) -> None:

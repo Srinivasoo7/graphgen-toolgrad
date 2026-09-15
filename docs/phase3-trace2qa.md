@@ -1,5 +1,14 @@
 # Phase 3 — Tool-grounded QA generator
 
+> **2026-09-15 update (v0.5.0):** the operator described below
+> (`bridge/trace_to_qa.py::TraceToQAOperator`, standalone) is now also
+> registered natively in Sri's GraphGen fork
+> (`Srinivasoo7/GraphGen@integrate/graphgen-toolgrad`) as
+> `graphgen.operators.trace_qa.TraceQAService` (a real `BaseOperator`,
+> `"trace_qa"` in the operators registry). The bridge module remains as the
+> keyless standalone variant. Ray-path execution is still unverified
+> (`ray.init()` cannot complete in this sandbox).
+
 Date: 2026-09-15. All claims below are from code actually read and
 commands actually run on this box (2 vCPUs, 7.7 GB RAM, no GPU).
 `GOOGLE_API_KEY` / `OPENAI_API_KEY` are absent, so the live LLM loop is
