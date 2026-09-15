@@ -1,4 +1,8 @@
-# Build plan
+# Build plan — all four phases complete (2026-09-15)
+
+Keyless builds + tests are done and pushed; the live LLM end-to-end
+(real traces → real QA → SFT) is documented in
+`docs/phase4-unified-loop.md` and awaits `GOOGLE_API_KEY`.
 
 ## Phase 0 — Recon spike
 - Pin both upstreams by recording their commit SHAs in `docs/phase0-recon.md`

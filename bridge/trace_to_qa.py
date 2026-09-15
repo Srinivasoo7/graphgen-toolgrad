@@ -266,12 +266,19 @@ class TraceToQAOperator:
     # -- main entry point ------------------------------------------------
 
     def generate_for_chain(
-        self, chain: dict, kg_context: dict, trace_seed: Optional[int] = None
+        self, chain: dict, kg_context: dict, trace_seed: Optional[int] = None,
+        prompt_suffix: str = "",
     ) -> List[dict]:
-        """Emit QA pairs for one executed chain."""
+        """Emit QA pairs for one executed chain.
+
+        ``prompt_suffix`` is appended to the LLM prompt before generation —
+        the Phase 4 refinement loop uses it to inject a textual critique of
+        a previous attempt (ToolGrad's textual-gradient pattern). Ignored
+        when ``llm_fn`` is None (template generation).
+        """
         prompt, prompt_ctx = self.build_prompt(chain, kg_context)
         if self.llm_fn is not None:
-            parsed = self.parse_llm_output(self.llm_fn(prompt))
+            parsed = self.parse_llm_output(self.llm_fn(prompt + prompt_suffix))
             question, answer = parsed["question"], parsed["answer"]
         else:
             question, answer = _template_generate(prompt_ctx)

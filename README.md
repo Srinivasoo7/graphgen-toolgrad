@@ -26,22 +26,52 @@ domain entities** (from the KG) and the answer can only be produced by
 
 ## Layout
 
-- `PLAN.md` — the phase-by-phase build plan.
+- `PLAN.md` — the phase-by-phase build plan (all four phases complete).
 - `docs/` — per-phase recon notes and design docs.
-- `bridge/` — adapter code: `kg_context_exporter.py` (GraphGen KG →
-  domain-context JSON/text), `prompts/predict_workflow_kg.py`
-  (KG-grounded `PREDICT_WORKFLOW` template), `toolgrad_patch.py`
-  (Phase 1 patch), `toolkg_builder.py` (ToolKG over the API catalog),
-  `kg_sampler.py` (KG-neighborhood sampling), `toolkg_patch.py`
-  (Phase 2 patch), `tests/` (keyless unit tests).
+- `bridge/` — adapter code:
+  - Phase 1: `kg_context_exporter.py` (GraphGen KG → domain-context
+    JSON/text), `prompts/predict_workflow_kg.py` (KG-grounded
+    `PREDICT_WORKFLOW` template), `toolgrad_patch.py` (prompt patch).
+  - Phase 2: `toolkg_builder.py` (ToolKG over the API catalog),
+    `kg_sampler.py` (KG-neighborhood sampling), `toolkg_patch.py`
+    (sampling patch).
+  - Phase 3: `trace_to_qa.py` (trace → tool-grounded QA operator),
+    `chain_verifier.py` (executable-chain verification).
+  - Phase 4: `refinement_loop.py` (generate → verify → filter → refine,
+    run ledger), `sft_mix.py` (SFT dataset assembly + dataset card),
+    `eval_harness.py` (keyless dataset metrics).
+  - `tests/` — keyless unit tests (`python3 bridge/tests/run_tests.py`).
+
+## The pipeline
+
+```
+GraphGen KG ──► kg_context ──┬──► PREDICT_WORKFLOW (ToolGrad inverse predictor)
+                             │         now grounds queries in real entities
+API catalog ──► ToolKG ──────┴──► KG-neighborhood sampling (replaces random)
+                                        │
+ToolGrad loop (executes real chains) ───┘
+        │
+        ▼  ExecutionTracer / workflow samples
+TraceToQAOperator ──► tool-grounded QA pairs (ChatML)
+        │
+chain_verifier + quality filters + textual-gradient refinement
+        │
+        ▼
+sft_mix.jsonl (train/valid) + dataset card + eval metrics
+```
 
 ## Status
 
 - Phase 0 (recon spike): done — `docs/phase0-recon.md`.
 - Phase 1 (KG→ToolGrad bridge): done — `docs/phase1-bridge.md`.
 - Phase 2 (ToolKG + guided sampling): done — `docs/phase2-toolkg.md`.
-  Tests: `python3 bridge/tests/run_tests.py` (needs the ToolGrad venv +
-  `networkx`; no API keys, no Ray).
+- Phase 3 (trace → tool-grounded QA): done — `docs/phase3-trace2qa.md`.
+- Phase 4 (unified refinement/SFT/eval loop): done — `docs/phase4-unified-loop.md`.
+
+Tests: **70/70 green**, keyless — `python3 bridge/tests/run_tests.py`
+(needs the ToolGrad venv + `networkx`; no API keys, no Ray).
+The live end-to-end (real traces → real QA → SFT) needs `GOOGLE_API_KEY`;
+the exact command sequence is in `docs/phase4-unified-loop.md`.
 
 ## Quick start (Phase 1)
 
