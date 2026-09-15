@@ -1,7 +1,9 @@
 # Build plan
 
 ## Phase 0 — Recon spike
-- Pin both upstreams as submodules under `third_party/` (record SHAs).
+- Pin both upstreams by recording their commit SHAs in `docs/phase0-recon.md`
+  (upstreams live as local checkouts only — no submodules, no vendored code
+  in this repo).
 - Run ToolGrad's `examples/mcp_filesystem.py` end-to-end (MCP path needs no
   ToolBench API key; works CPU-only).
 - Run GraphGen's quickstart on a tiny corpus.
@@ -39,6 +41,6 @@
 ## Ground rules
 - Never commit secrets (API keys, tokens). Env vars documented, values stay
   local.
-- Upstream pins recorded in `third_party/` submodule SHAs; upgrades are
-  explicit commits.
+- Upstream pins are recorded SHAs in `docs/phase0-recon.md`; upgrades are
+  explicit doc updates. Upstream code is never vendored into this repo.
 - Both upstreams are Apache 2.0; this repo is Apache 2.0.
