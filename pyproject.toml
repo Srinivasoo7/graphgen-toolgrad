@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "graphgen-toolgrad"
+version = "0.4.0"
+description = "Knowledge-grounded tool-use SFT data factory: GraphGen KG context + ToolGrad executable tool chains"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "networkx>=3.0",
+]
+
+# ToolGrad and GraphGen are intentionally NOT dependencies: neither ships a
+# PyPI release, and this repo never vendors upstream code. Install them from
+# git at the pinned SHAs with:  bash scripts/setup_upstreams.sh
+[project.optional-dependencies]
+full = [
+    "langchain-core>=1.6",          # ChatPromptTemplate objects (template tests)
+    "langchain-mcp-adapters>=0.3",  # live MCP tool discovery (toolkg_patch)
+]
+
+[tool.setuptools.packages.find]
+include = ["bridge*"]

@@ -25,7 +25,7 @@ one SFT mix and measure the dataset keylessly — no trained model needed.
 | `bridge/tests/test_refinement_loop.py` | 8 tests |
 | `bridge/tests/test_sft_mix.py` | 5 tests |
 | `bridge/tests/test_eval_harness.py` | 6 tests |
-| Suite | **70/70 green** via `../vendor/.venv_toolgrad/bin/python bridge/tests/run_tests.py` (repo root) |
+| Suite | **70/70 green** via `../vendor/.venv_toolgrad/bin/python bridge/tests/run_tests.py` (repo root) — measured in the pinned env (Python 3.12.3, `requirements.txt` pins, ToolGrad @ `c9544f84`); the suite now also ships 4 upstream-contract tests (74 total) |
 
 ## Architecture
 
@@ -93,7 +93,7 @@ knowledge-QA probe — that is the documented next step, not a claim.
 
 ## Validated keylessly vs needs the live run
 
-**Validated here (70/70 tests):** loop orchestration on fixtures (ledger
+**Validated here (70/70 tests, pinned env — Python 3.12.3, `requirements.txt` pins):** loop orchestration on fixtures (ledger
 records iterations; filtering drops invalid chains; refinement improves a
 scripted bad→good case and records `refinement_attempt` + critique);
 mix merge/dedupe/split/card; harness metrics on a hand-made dataset with

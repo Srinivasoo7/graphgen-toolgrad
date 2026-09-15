@@ -60,6 +60,30 @@ chain_verifier + quality filters + textual-gradient refinement
 sft_mix.jsonl (train/valid) + dataset card + eval metrics
 ```
 
+## Install (from zero)
+
+```bash
+git clone https://github.com/Srinivasoo7/graphgen-toolgrad
+cd graphgen-toolgrad
+
+# 1. Fetch the pinned upstreams (GraphGen @ 3a3eb097, ToolGrad @ c9544f84)
+#    into ../vendor and pip-install them editable. Re-runnable.
+bash scripts/setup_upstreams.sh
+
+# 2. Python deps (pinned; measured green on Python 3.12.3)
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt   # networkx + langchain-core + langchain-mcp-adapters
+pip install -e .                  # the bridge package itself
+
+# 3. Run the suite (no API keys, no Ray)
+python3 bridge/tests/run_tests.py
+```
+
+Without the optional deps the suite degrades gracefully: the runner reports
+`SKIP` per module/test instead of crashing (bare stdlib: 3 passed, 17
+skipped, 0 failed). Without ToolGrad installed, the patch modules and the
+upstream contract test skip — everything else still runs.
+
 ## Status
 
 - Phase 0 (recon spike): done — `docs/phase0-recon.md`.
@@ -67,11 +91,36 @@ sft_mix.jsonl (train/valid) + dataset card + eval metrics
 - Phase 2 (ToolKG + guided sampling): done — `docs/phase2-toolkg.md`.
 - Phase 3 (trace → tool-grounded QA): done — `docs/phase3-trace2qa.md`.
 - Phase 4 (unified refinement/SFT/eval loop): done — `docs/phase4-unified-loop.md`.
+- Ponytail revalidation: done — `docs/ponytail-review.md`.
 
-Tests: **70/70 green**, keyless — `python3 bridge/tests/run_tests.py`
-(needs the ToolGrad venv + `networkx`; no API keys, no Ray).
+Tests: **74/74 green**, keyless — `python3 bridge/tests/run_tests.py`.
+Measured in the pinned environment (Python 3.12.3, `requirements.txt`
+exact pins, ToolGrad @ `c9544f84` installed editable); earlier docs saying
+"70/70" predate the 4 upstream-contract tests added in this pass.
 The live end-to-end (real traces → real QA → SFT) needs `GOOGLE_API_KEY`;
 the exact command sequence is in `docs/phase4-unified-loop.md`.
+
+## Known limitations
+
+- **Runtime monkeypatching is the integration mechanism** — deliberate and
+  documented, but fragile: `toolgrad_patch` swaps `PREDICT_WORKFLOW` /
+  `create_workflow_updater`, and `toolkg_patch` swaps `get_mcp_apis` and
+  calls the *private* `toolgrad.utils.mcp._wrap_with_path_prefix`. A ToolGrad
+  refactor of those call sites will break the bridge.
+  `bridge/tests/test_upstream_contract.py` is the tripwire: re-run the suite
+  after any upstream SHA bump and it fails loudly on exactly what moved.
+- **GraphGen is format-compatible, not plugged in.** The bridge reads
+  GraphGen's networkx GraphML output and emits ChatML/ShareGPT-shaped rows,
+  but `TraceToQAOperator` is not registered in GraphGen's Ray engine. The
+  registration path (needs a Ray-capable environment — `ray.init()` cannot
+  complete in this sandbox): 1) subclass `graphgen.bases.BaseOperator`
+  (the operator already mirrors its `process(batch) -> (results, stats)`
+  shape); 2) place it under `graphgen/operators/generate/`; 3) wire it into
+  a Ray pipeline script.
+- **Live LLM required for real data.** Everything here is validated
+  keylessly on fixtures; generating actual KG-grounded tool-use data needs
+  `GOOGLE_API_KEY` (or `OPENAI_API_KEY` / Vertex ADC) for ToolGrad's
+  generation loop.
 
 ## Quick start (Phase 1)
 
