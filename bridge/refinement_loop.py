@@ -250,7 +250,7 @@ class RefinementLoop:
         }
 
         current = pairs
-        attempt = {id(qa): 0 for qa in pairs}
+        attempt: Dict[int, int] = {}
         for iteration in range(self.config.max_iterations):
             scored = self._score_all(current)
             kept, rejected = filter_pairs(scored, self.config)

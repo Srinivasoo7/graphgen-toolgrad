@@ -99,14 +99,14 @@ def evaluate(
         valid = [bool(chain_verifier.verify_qa(qa, executor)["chain_valid"]) for qa in pairs]
     else:
         valid = None
-    metrics["fraction_chain_verified"] = (sum(valid) / n) if valid is not None and n else (
-        None if valid is None else 0.0
-    )
     if valid is None:
+        metrics["fraction_chain_verified"] = None
         metrics["verification_note"] = (
             "no executor or precomputed verifications supplied; "
             "chain validity not measured"
         )
+    else:
+        metrics["fraction_chain_verified"] = (sum(valid) / n) if n else 0.0
 
     # -- ToolKG coverage ----------------------------------------------
     coverages = [

@@ -218,15 +218,11 @@ class TraceToQAOperator:
         kg_context: Optional[dict] = None,
         max_pairs_per_chain: int = 1,
         toolkg=None,
-        working_dir: str = "cache",
-        op_name: str = "trace_to_qa",
     ) -> None:
         self.llm_fn = llm_fn
         self.kg_context = kg_context or {"entities": [], "triples": [], "communities": []}
         self.max_pairs_per_chain = max(1, max_pairs_per_chain)
         self.toolkg = toolkg
-        self.working_dir = working_dir
-        self.op_name = op_name
 
     # -- prompt construction / parsing (the LLM seam) --------------------
 
@@ -299,7 +295,7 @@ class TraceToQAOperator:
                 "kg_entity_count": len(_entity_names(kg_context)),
             },
         }
-        return [base] * 1 if self.max_pairs_per_chain == 1 else [dict(base) for _ in range(self.max_pairs_per_chain)]
+        return [base] if self.max_pairs_per_chain == 1 else [dict(base) for _ in range(self.max_pairs_per_chain)]
 
     def process(
         self, samples: Sequence[dict], tracers: Optional[Sequence[Optional[dict]]] = None

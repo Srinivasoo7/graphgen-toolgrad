@@ -29,10 +29,9 @@ tool outputs are inferred from descriptions (see ``toolkg_builder``).
 
 Note on determinism: upstream reseeds the *global* RNG with ``seed`` on
 every call, so every iteration samples the *same* bundle (likely an
-upstream quirk). The patched sampler uses a local ``random.Random`` seeded with a
-deterministic fold of ``(seed, call_count)`` into one int — deterministic
-per call sequence, varying per iteration by default
-(``vary_per_call=False`` restores constant sampling).
+upstream quirk). The patched sampler uses a local ``random.Random`` seeded
+with a deterministic fold of ``(seed, call_count)`` into one int —
+deterministic per call sequence, varying per iteration.
 """
 
 from __future__ import annotations
@@ -48,7 +47,6 @@ _TOOLKG = None
 _TOOLS_BY_NAME: Dict[str, Any] = {}
 _ORIGINAL_GET_MCP_APIS = None
 _PATCHED = False
-_VARY_PER_CALL = True
 _CALL_COUNT = 0
 
 
@@ -118,7 +116,7 @@ def _effective_seed(seed: Any, call_count: int) -> int:
     processes, unlike ``hash()`` of a tuple.
     """
     base = seed if isinstance(seed, int) else abs(hash(str(seed))) % (2**31)
-    return base * 1_000_003 + call_count if _VARY_PER_CALL else base
+    return base * 1_000_003 + call_count
 
 
 def _toolkg_get_mcp_apis(mcp_dict: dict, num_apis: int = 5, seed: int = 42) -> list:
@@ -141,7 +139,6 @@ def apply_toolkg_patch(
     mcp_dict: Optional[dict] = None,
     output_hints: Optional[Mapping[str, Sequence[Tuple[str, str]]]] = None,
     threshold: float = toolkg_builder.DEFAULT_THRESHOLD,
-    vary_per_call: bool = True,
     toolkg=None,
     tools_by_name: Optional[Dict[str, Any]] = None,
 ) -> None:
@@ -152,14 +149,13 @@ def apply_toolkg_patch(
     ToolKG once up front). Otherwise the ToolKG is built lazily from
     ``mcp_dict`` on the first patched call. Idempotent.
     """
-    global _PATCHED, _ORIGINAL_GET_MCP_APIS, _VARY_PER_CALL
+    global _PATCHED, _ORIGINAL_GET_MCP_APIS
     global _TOOLKG, _TOOLS_BY_NAME, _CALL_COUNT
     from toolgrad.utils import mcp as mcp_module
 
     if _PATCHED:
         remove_toolkg_patch()
     _ORIGINAL_GET_MCP_APIS = mcp_module.get_mcp_apis
-    _VARY_PER_CALL = vary_per_call
     _CALL_COUNT = 0
     if toolkg is not None:
         _TOOLKG = toolkg

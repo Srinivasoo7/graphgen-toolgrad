@@ -48,24 +48,18 @@ def sample_api_neighborhood(
     sampled: List[Hashable] = [start]
     seen = {start}
     current = start
-    max_steps = num_apis * 50
-    steps = 0
-    while len(sampled) < num_apis and steps < max_steps:
-        steps += 1
+    while len(sampled) < num_apis:
         nbrs = sorted(n for n in toolkg.successors(current) if n not in seen)
         if nbrs and rng.random() >= restart_prob:
             weights = [toolkg[current][n].get("score", 0.5) or 0.5 for n in nbrs]
             current = rng.choices(nbrs, weights=weights, k=1)[0]
         else:
+            # Restart (or dead-end): jump to a random unvisited node so
+            # disconnected components don't starve the sample. Always
+            # appends, so the loop provably terminates with num_apis items.
             current = rng.choice([n for n in nodes if n not in seen])
         seen.add(current)
         sampled.append(current)
-
-    # Safety net (unreachable in practice: the restart branch always fills).
-    if len(sampled) < num_apis:
-        rest = [n for n in nodes if n not in seen]
-        rng.shuffle(rest)
-        sampled.extend(rest[: num_apis - len(sampled)])
     return sampled
 
 
