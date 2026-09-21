@@ -128,12 +128,18 @@ def _llm_factory(llm_cfg: dict, counter: Dict[str, int]) -> Callable:
         key = _resolve_key()
         counter["n"] += 1
         temperature = kwargs.get("temperature", kwargs.get("temp", 1.0))
-        return ChatOpenAI(
-            model=llm_cfg.get("model", "google/gemini-2.5-flash-lite"),
-            api_key=key,
-            base_url=llm_cfg.get("base_url", "https://openrouter.ai/api/v1"),
-            temperature=temperature,
-        )
+        chat_kwargs: Dict[str, Any] = {
+            "model": llm_cfg.get("model", "google/gemini-2.5-flash-lite"),
+            "api_key": key,
+            "base_url": llm_cfg.get("base_url", "https://openrouter.ai/api/v1"),
+            "temperature": temperature,
+        }
+        # Cap per-call output: OpenRouter pre-authorizes the full max_tokens
+        # against the account balance, so an unset cap 402s low-balance keys.
+        max_tokens = int(llm_cfg.get("max_tokens", 0) or 0)
+        if max_tokens > 0:
+            chat_kwargs["max_tokens"] = max_tokens
+        return ChatOpenAI(**chat_kwargs)
 
     return factory
 

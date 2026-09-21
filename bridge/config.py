@@ -88,6 +88,7 @@ class LLMConfig:
     backoff_s: float = 1.0
     timeout_s: float = 120.0
     max_rpm: float = 0.0  # 0 = no client-side rate limit
+    max_tokens: int = 0  # 0 = provider default; set to cap per-call cost
     budget_usd: float = 0.0  # 0 = no cap; aborts the run when exceeded
     price_per_1m_input: float = 0.0  # 0 = unknown; cost then reported as call counts
     price_per_1m_output: float = 0.0
@@ -215,6 +216,7 @@ def from_dict(raw: dict) -> RunConfig:
             backoff_s=_float(llm, "backoff_s", 1.0),
             timeout_s=_float(llm, "timeout_s", 120.0),
             max_rpm=_float(llm, "max_rpm", 0.0),
+            max_tokens=_int(llm, "max_tokens", 0),
             budget_usd=_float(llm, "budget_usd", 0.0),
             price_per_1m_input=_float(llm, "price_per_1m_input", 0.0),
             price_per_1m_output=_float(llm, "price_per_1m_output", 0.0),

@@ -272,6 +272,7 @@ class FactoryRun:
                 "model": self.config.llm.model,
                 "api_key_env": self.config.llm.api_key_env,
                 "base_url": self.config.llm.base_url,
+                "max_tokens": self.config.llm.max_tokens,
             },
             num_chains=gen_cfg.num_chains,
             apis_per_workflow=gen_cfg.apis_per_workflow,

@@ -181,6 +181,7 @@ class OpenRouterBackend:
         model: str,
         base_url: str = "https://openrouter.ai/api/v1",
         timeout_s: float = 120.0,
+        max_tokens: int = 0,
     ) -> None:
         if not api_key:
             raise LLMError("OpenRouter API key is empty")
@@ -188,6 +189,7 @@ class OpenRouterBackend:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
+        self.max_tokens = max_tokens
 
     @classmethod
     def from_env(
@@ -196,6 +198,7 @@ class OpenRouterBackend:
         api_key_env: str = "OPENROUTER_API_KEY",
         base_url: str = "https://openrouter.ai/api/v1",
         timeout_s: float = 120.0,
+        max_tokens: int = 0,
     ) -> "OpenRouterBackend":
         api_key = os.environ.get(api_key_env, "")
         if not api_key:
@@ -203,7 +206,8 @@ class OpenRouterBackend:
                 f"environment variable {api_key_env} is not set; "
                 "export it with your OpenRouter API key"
             )
-        return cls(api_key, model, base_url=base_url, timeout_s=timeout_s)
+        return cls(api_key, model, base_url=base_url, timeout_s=timeout_s,
+                   max_tokens=max_tokens)
 
     def _headers(self) -> Dict[str, str]:
         return {
@@ -214,12 +218,15 @@ class OpenRouterBackend:
         }
 
     def complete(self, prompt: str) -> str:
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-        ).encode("utf-8")
+        body_params: Dict[str, Any] = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if self.max_tokens > 0:
+            # Cap per-call output: also caps what providers pre-authorize
+            # against the account balance (a 402 source when left unset).
+            body_params["max_tokens"] = self.max_tokens
+        payload = json.dumps(body_params).encode("utf-8")
         request = urllib.request.Request(
             f"{self.base_url}/chat/completions",
             data=payload,
@@ -275,21 +282,24 @@ class AuthdOpenRouterBackend:
         model: str,
         base_url: str = "https://openrouter.ai/api/v1",
         timeout_s: float = 120.0,
+        max_tokens: int = 0,
         helpers=None,
     ) -> None:
         self.model = model
         self.base_url = base_url.rstrip("/")
         self.timeout_s = timeout_s
+        self.max_tokens = max_tokens
         self._helpers = helpers  # injectable for keyless tests
 
     def complete(self, prompt: str) -> str:
         dc = self._helpers or _load_authd_helpers()
-        payload = json.dumps(
-            {
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-        ).encode("utf-8")
+        body_params: Dict[str, Any] = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if self.max_tokens > 0:
+            body_params["max_tokens"] = self.max_tokens
+        payload = json.dumps(body_params).encode("utf-8")
         request = urllib.request.Request(
             f"{self.base_url}/chat/completions",
             data=payload,
@@ -352,12 +362,14 @@ def build_llm_client(llm_cfg, *, sleep_fn=time.sleep) -> LLMClient:
             api_key_env=llm_cfg.api_key_env,
             base_url=llm_cfg.base_url,
             timeout_s=llm_cfg.timeout_s,
+            max_tokens=llm_cfg.max_tokens,
         )
     else:
         backend = AuthdOpenRouterBackend(
             model=llm_cfg.model,
             base_url=llm_cfg.base_url,
             timeout_s=llm_cfg.timeout_s,
+            max_tokens=llm_cfg.max_tokens,
         )
     min_interval = 60.0 / llm_cfg.max_rpm if llm_cfg.max_rpm > 0 else 0.0
     return LLMClient(
