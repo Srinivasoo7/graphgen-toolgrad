@@ -17,12 +17,15 @@ via :func:`save_ledger` / :func:`load_ledger`.
 """
 
 import json
+import logging
 import os
 import random
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from bridge import chain_verifier, trace_to_qa
 from bridge.kg_context_exporter import estimate_tokens
+
+logger = logging.getLogger(__name__)
 
 
 class RefineConfig:
@@ -129,10 +132,18 @@ def critique_qa(
             "outputs feed the next tool's inputs."
         )
     if config.require_entities and not score["entity_grounded"]:
-        issues.append(
-            "The question is not anchored to any knowledge-graph entity. "
-            "Name a real entity from the KG context in the question."
-        )
+        refs = score.get("entity_refs") or []
+        if refs:
+            issues.append(
+                "The question is not anchored to any knowledge-graph entity. "
+                f"Name one of these exact KG entities in the question: "
+                f"{', '.join(refs)}."
+            )
+        else:
+            issues.append(
+                "The question is not anchored to any knowledge-graph entity. "
+                "Name a real entity from the KG context in the question."
+            )
     if not qa.get("answer_draft", "").strip():
         issues.append("The answer draft is empty. Write an answer that the tool chain results support.")
     return issues
@@ -189,6 +200,11 @@ class RefinementLoop:
     ``ToolGradExecutor`` live). ``samples`` are ToolGrad workflow-sample
     dicts; ``tracers`` optionally supply provenance (same contract as
     ``TraceToQAOperator.process``).
+
+    ``filter_fn`` is an optional second-stage semantic gate applied after
+    the heuristic gates: ``filter_fn(qa, score) -> bool``. It may mutate
+    ``qa`` to attach annotations (e.g. ``qa["jev"]``). Pairs it rejects
+    are counted as ``num_semantic_filtered`` in the iteration metrics.
     """
 
     def __init__(
@@ -198,13 +214,34 @@ class RefinementLoop:
         toolkg: Any = None,
         executor: Any = None,
         config: Optional[RefineConfig] = None,
+        filter_fn: Optional[Callable[[Dict[str, Any], Dict[str, Any]], bool]] = None,
     ) -> None:
         self.llm_fn = llm_fn
         self.kg_context = kg_context or {"entities": [], "triples": [], "communities": []}
         self.toolkg = toolkg
         self.executor = executor
         self.config = config or RefineConfig()
+        self.filter_fn = filter_fn
         self.rng = random.Random(self.config.seed)
+
+    def _apply_filter_fn(
+        self, kept: List[Tuple[Dict[str, Any], Dict[str, Any]]]
+    ) -> Tuple[List[Tuple[Dict[str, Any], Dict[str, Any]]], int]:
+        """Apply the optional semantic filter; returns (kept, num_filtered)."""
+        if self.filter_fn is None:
+            return kept, 0
+        remaining: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
+        num_filtered = 0
+        for qa, score in kept:
+            try:
+                keep = self.filter_fn(qa, score)
+            except Exception:  # noqa: BLE001 — a broken filter must not kill the run
+                keep = True
+            if keep:
+                remaining.append((qa, score))
+            else:
+                num_filtered += 1
+        return remaining, num_filtered
 
     def _score_all(self, pairs: List[Dict[str, Any]]) -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
         return [(qa, score_qa(qa, self.executor, self.toolkg, self.kg_context)) for qa in pairs]
@@ -238,6 +275,7 @@ class RefinementLoop:
             toolkg=self.toolkg,
         )
         pairs, gen_stats = op.process(samples, tracers)
+        logger.info("trace-to-QA: %d samples -> %d draft pairs", len(samples), len(pairs))
         # map each pair back to its chain for refinement prompts
         chain_by_id = {c["chain_id"]: c for s in samples for c in trace_to_qa.extract_chains(s)}
 
@@ -252,16 +290,21 @@ class RefinementLoop:
         current = pairs
         attempt: Dict[int, int] = {}
         for iteration in range(self.config.max_iterations):
+            logger.info("refine iteration %d: scoring %d pairs",
+                        iteration, len(current))
             scored = self._score_all(current)
             kept, rejected = filter_pairs(scored, self.config)
+            kept, num_filtered = self._apply_filter_fn(kept)
             metrics = self._iteration_metrics(iteration, scored, num_refined=0)
             metrics["num_kept"] = len(kept)
-            metrics["num_rejected"] = len(rejected)
+            metrics["num_rejected"] = len(rejected) + num_filtered
+            metrics["num_semantic_filtered"] = num_filtered
 
-            if not rejected:
+            if not rejected and num_filtered == 0:
                 metrics["num_refined"] = 0
                 ledger["iterations"].append(metrics)
                 ledger["stopped_reason"] = "all_pass"
+                logger.info("refine done: all_pass (%d kept)", len(kept))
                 return _attach_scores(kept), ledger
 
             if self.llm_fn is None:
@@ -269,6 +312,7 @@ class RefinementLoop:
                 # nothing honest to iterate on.
                 ledger["iterations"].append(metrics)
                 ledger["stopped_reason"] = "no_llm_refinement"
+                logger.info("refine done: no_llm_refinement (%d kept)", len(kept))
                 return _attach_scores(kept), ledger
 
             # Refine the rejected pairs with their critiques.
@@ -292,12 +336,17 @@ class RefinementLoop:
                 refined.append(new_qa)
             metrics["num_refined"] = len(refined)
             ledger["iterations"].append(metrics)
+            logger.info(
+                "refine iteration %d: kept=%d rejected=%d refined=%d",
+                iteration, len(kept), len(rejected), len(refined))
             current = [qa for qa, _ in kept] + refined
 
         # max_iterations exhausted: final filter on the last round
         scored = self._score_all(current)
         kept, _ = filter_pairs(scored, self.config)
+        kept, _ = self._apply_filter_fn(kept)
         ledger["stopped_reason"] = "max_iterations"
+        logger.info("refine done: max_iterations (%d kept)", len(kept))
         return _attach_scores(kept), ledger
 
 

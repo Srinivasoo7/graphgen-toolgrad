@@ -143,13 +143,16 @@ def ground_entities(chain: dict, kg_context: dict) -> List[str]:
     """Deterministically anchor a chain to KG entities.
 
     An entity counts as referenced if its name (case-insensitive) appears
-    in any tool input value or tool result preview of the chain. No LLM.
+    in any step's tool name, tool input value, or tool result preview of
+    the chain. Tool names are included because domain KGs may model the
+    tools themselves as entities (e.g. a tool-catalog KG). No LLM.
     """
     names = _entity_names(kg_context)
     if not names:
         return []
     haystack_parts = []
     for step in chain["steps"]:
+        haystack_parts.append(str(step.get("tool", "")))
         haystack_parts.append(step.get("result_preview", ""))
         for value in step.get("tool_input", {}).values():
             haystack_parts.append(str(value))

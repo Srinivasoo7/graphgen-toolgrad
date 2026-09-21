@@ -99,3 +99,91 @@ def test_sampler_seam_signatures():
     assert "api_sampler" in inspect.signature(
         toolgrad_on_mcp.create_graph_on_mcp
     ).parameters
+
+
+def _seam_tool(name, *, func=None, coroutine=None):
+    from langchain_core.tools import StructuredTool
+    from pydantic import BaseModel
+
+    class Args(BaseModel):
+        path: str = ""
+
+    return StructuredTool(
+        name=name, description="d", func=func, coroutine=coroutine,
+        args_schema=Args,
+    )
+
+
+def test_wrap_tool_with_tracking_async_only_tool():
+    # langchain-mcp-adapters MCP tools are async-only (func=None). The
+    # wrapper must track the coroutine instead of wrapping None (the old
+    # code produced TypeError: 'NoneType' object is not callable).
+    mods = _mods()
+    if mods is None:
+        return "SKIP"
+    import asyncio
+
+    _, module_lib, _, _, _ = mods
+
+    async def fake_coro(path=""):
+        return f"ok:{path}"
+
+    tool = _seam_tool("t", coroutine=fake_coro)
+    assert tool.func is None
+    tracker = {}
+    wrapped = module_lib.wrap_tool_with_tracking(tool, tracker)
+    assert wrapped.func is None  # stays async-only; sync bridge lives in mcp.py
+    assert asyncio.run(wrapped.coroutine(path="x")) == "ok:x"
+    assert tracker.get("called") is True
+
+
+def test_wrap_tool_with_tracking_sync_tool():
+    mods = _mods()
+    if mods is None:
+        return "SKIP"
+
+    _, module_lib, _, _, _ = mods
+    tracker = {}
+    wrapped = module_lib.wrap_tool_with_tracking(
+        _seam_tool("t", func=lambda path="": f"ok:{path}"), tracker)
+    assert wrapped.func(path="y") == "ok:y"
+    assert tracker.get("called") is True
+
+
+def test_wrap_tool_with_tracking_rejects_empty_tool():
+    mods = _mods()
+    if mods is None:
+        return "SKIP"
+
+    _, module_lib, _, _, _ = mods
+    try:
+        module_lib.wrap_tool_with_tracking(_seam_tool("t"), {})
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("expected ValueError for tool with no callables")
+
+
+def test_wrap_with_path_prefix_async_only_sync_invoke():
+    # Async-only MCP tools get a working sync func via the sync bridge
+    # (asyncio.run outside a loop, worker thread inside one).
+    mods = _mods()
+    if mods is None:
+        return "SKIP"
+    import asyncio
+
+    _, _, _, _, mcp_mod = mods
+
+    async def fake_coro(path=""):
+        return f"ok:{path}"
+
+    wrapped = mcp_mod._wrap_with_path_prefix(
+        _seam_tool("t", coroutine=fake_coro), "/base")
+    assert wrapped.coroutine is not None
+    assert wrapped.func(path="rel") == "ok:/base/rel"
+    assert wrapped.func(path="/abs") == "ok:/abs"
+
+    async def inside_loop():
+        return wrapped.func(path="rel")
+
+    assert asyncio.run(inside_loop()) == "ok:/base/rel"

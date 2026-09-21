@@ -1,0 +1,336 @@
+{
+  "model": "jev-latest",
+  "n": 12,
+  "agreement": 0.75,
+  "heuristic_accepts": 6,
+  "jev_accepts": 3,
+  "disagreements": [
+    {
+      "name": "empty_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.05,
+      "grounded_noul": 0.99,
+      "latency_ms": 690.4,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 567,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "contradictory_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.02,
+      "grounded_noul": 0.98,
+      "latency_ms": 979.7,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 575,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "fluff_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.1,
+      "grounded_noul": 0.98,
+      "latency_ms": 554.1,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 572,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    }
+  ],
+  "stability": [
+    {
+      "name": "good",
+      "p_accept_runs": [
+        0.85,
+        0.83,
+        0.83
+      ],
+      "spread": 0.02,
+      "flips": 0
+    },
+    {
+      "name": "good_model_y",
+      "p_accept_runs": [
+        0.71,
+        0.73,
+        0.72
+      ],
+      "spread": 0.02,
+      "flips": 0
+    },
+    {
+      "name": "good_tesla",
+      "p_accept_runs": [
+        0.66,
+        0.58,
+        0.59
+      ],
+      "spread": 0.08,
+      "flips": 0
+    },
+    {
+      "name": "empty_answer",
+      "p_accept_runs": [
+        0.05,
+        0.04,
+        0.05
+      ],
+      "spread": 0.01,
+      "flips": 0
+    },
+    {
+      "name": "contradictory_answer",
+      "p_accept_runs": [
+        0.02,
+        0.02,
+        0.02
+      ],
+      "spread": 0.0,
+      "flips": 0
+    },
+    {
+      "name": "fluff_answer",
+      "p_accept_runs": [
+        0.1,
+        0.1,
+        0.09
+      ],
+      "spread": 0.01,
+      "flips": 0
+    }
+  ],
+  "mean_stability_spread": 0.023,
+  "latency_ms": {
+    "p50": 775.1,
+    "max": 1134.8
+  },
+  "input_tokens": 13726,
+  "est_cost_usd": 0.000576,
+  "fallbacks": 0,
+  "rows": [
+    {
+      "name": "good",
+      "heuristic": "accept",
+      "jev": "accept",
+      "agree": true,
+      "p_accept": 0.85,
+      "grounded_noul": 0.99,
+      "latency_ms": 987.3,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 577,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "good_model_y",
+      "heuristic": "accept",
+      "jev": "accept",
+      "agree": true,
+      "p_accept": 0.71,
+      "grounded_noul": 0.97,
+      "latency_ms": 814.0,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 582,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "good_tesla",
+      "heuristic": "accept",
+      "jev": "accept",
+      "agree": true,
+      "p_accept": 0.66,
+      "grounded_noul": 0.99,
+      "latency_ms": 653.3,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 582,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "ungrounded",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.0,
+      "grounded_noul": 0.04,
+      "latency_ms": 900.1,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 564,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": false
+      }
+    },
+    {
+      "name": "wrong_entity",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.01,
+      "grounded_noul": 0.87,
+      "latency_ms": 545.5,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 563,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": false
+      }
+    },
+    {
+      "name": "partial_ground",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.04,
+      "grounded_noul": 0.08,
+      "latency_ms": 1134.8,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 570,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": false
+      }
+    },
+    {
+      "name": "missing_tool",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.0,
+      "grounded_noul": 0.98,
+      "latency_ms": 524.7,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 586,
+      "keyless": {
+        "chain_valid": false,
+        "coverage": 0.5,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "bad_args",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.02,
+      "grounded_noul": 0.99,
+      "latency_ms": 503.9,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 569,
+      "keyless": {
+        "chain_valid": false,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "single_step",
+      "heuristic": "reject",
+      "jev": "reject",
+      "agree": true,
+      "p_accept": 0.24,
+      "grounded_noul": 0.98,
+      "latency_ms": 775.1,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 556,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 0.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "empty_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.05,
+      "grounded_noul": 0.99,
+      "latency_ms": 690.4,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 567,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "contradictory_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.02,
+      "grounded_noul": 0.98,
+      "latency_ms": 979.7,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 575,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    },
+    {
+      "name": "fluff_answer",
+      "heuristic": "accept",
+      "jev": "reject",
+      "agree": false,
+      "p_accept": 0.1,
+      "grounded_noul": 0.98,
+      "latency_ms": 554.1,
+      "source": "jev",
+      "error": null,
+      "input_tokens": 572,
+      "keyless": {
+        "chain_valid": true,
+        "coverage": 1.0,
+        "entity_grounded": true
+      }
+    }
+  ]
+}

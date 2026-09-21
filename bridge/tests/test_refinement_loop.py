@@ -132,3 +132,73 @@ def test_loop_requires_executor():
     except ValueError:
         return
     raise AssertionError("expected ValueError without an executor")
+
+
+def test_filter_fn_rejects_and_annotates():
+    seen = []
+
+    def reject_all(qa, score):
+        seen.append(qa)
+        qa["jev"] = {"verdict": "reject"}
+        return False
+
+    loop = _loop(filter_fn=reject_all)
+    kept, ledger = loop.run([_fixtures.sample()], [{"seed": 123}])
+    assert kept == []
+    metrics = ledger["iterations"][0]
+    assert metrics["num_semantic_filtered"] == 1
+    assert metrics["num_rejected"] == 1
+    assert ledger["stopped_reason"] != "all_pass"
+    assert seen[0]["jev"]["verdict"] == "reject"
+
+
+def test_filter_fn_accept_keeps_all_pass():
+    loop = _loop(filter_fn=lambda qa, score: True)
+    kept, ledger = loop.run([_fixtures.sample()], [{"seed": 123}])
+    assert len(kept) == 1
+    assert ledger["stopped_reason"] == "all_pass"
+    assert ledger["iterations"][0]["num_semantic_filtered"] == 0
+
+
+def test_filter_fn_exception_fails_open():
+    def boom(qa, score):
+        raise RuntimeError("judge exploded")
+
+    loop = _loop(filter_fn=boom)
+    kept, ledger = loop.run([_fixtures.sample()], [{"seed": 123}])
+    assert len(kept) == 1  # a broken filter must not kill the run
+    assert ledger["stopped_reason"] == "all_pass"
+
+
+def test_critique_names_candidate_entities():
+    # The entity critique must name the actual KG candidates so the LLM can
+    # comply; a vague "name a real entity" is not actionable.
+    score = {
+        "chain_valid": True,
+        "verification": {"chain_valid": True},
+        "coverage": 1.0,
+        "entity_grounded": False,
+        "entity_refs": ["list_directory_with_sizes"],
+        "required_tools": ["list_directory_with_sizes"],
+        "question_tokens": 10,
+        "answer_tokens": 10,
+    }
+    qa = {"question": "What do the records say?", "answer_draft": "A."}
+    issues = refinement_loop.critique_qa(qa, score, RefineConfig())
+    assert any("list_directory_with_sizes" in i for i in issues)
+
+
+def test_critique_entity_fallback_without_refs():
+    score = {
+        "chain_valid": True,
+        "verification": {"chain_valid": True},
+        "coverage": 1.0,
+        "entity_grounded": False,
+        "entity_refs": [],
+        "required_tools": [],
+        "question_tokens": 10,
+        "answer_tokens": 10,
+    }
+    qa = {"question": "Q?", "answer_draft": "A."}
+    issues = refinement_loop.critique_qa(qa, score, RefineConfig())
+    assert any("entity" in i.lower() for i in issues)

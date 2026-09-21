@@ -7,12 +7,20 @@ a fiction. This module checks every emitted chain against a tool executor
 
 Two executors:
 - ``MockToolExecutor`` — keyless. Implements the minimal tool-call
-  interface (``call(tool_name, tool_input)``) with registered input
-  schemas and canned handlers. Used by tests and by offline validation.
+  interface (``call(tool_name, tool_input)`` / ``acall``) with registered
+  input schemas and canned handlers. Used by tests and by offline
+  validation.
 - ``ToolGradExecutor`` — live path. Wraps real ToolGrad tools
-  (``name -> StructuredTool``; from the fork's ``discover_mcp_tools``) and
-  calls ``tool.invoke(tool_input)`` — the same call the executor agent
-  makes.
+  (``name -> StructuredTool``; from the fork's ``discover_mcp_tools``).
+  ``call`` is async-aware: async-only MCP tools (the fork's
+  ``_wrap_with_path_prefix`` builds the sync ``func`` over the original
+  tool's ``func``, which is ``None`` for async-only tools) are executed
+  via ``ainvoke`` run to completion; tools with a real sync ``func`` go
+  through ``invoke`` as before. ``acall`` is the native async entry point
+  for callers already inside an event loop.
+
+``verify_qa(qa, executor)`` is the sync verifier; ``averify_qa`` is its
+async sibling and uses ``executor.acall``.
 
 ``verify_qa(qa, executor)`` returns::
 
@@ -36,7 +44,9 @@ reranking (cf. ``kg_sampler.neighborhood_density``).
 
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+import asyncio
+import concurrent.futures
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 
 def _schema_problems(tool_input: dict, schema: dict) -> List[str]:
@@ -70,6 +80,21 @@ def _schema_problems(tool_input: dict, schema: dict) -> List[str]:
     return problems
 
 
+def _await_sync(coro) -> Any:
+    """Run ``coro`` to completion from synchronous code.
+
+    Uses ``asyncio.run`` when no event loop is running; otherwise hops to
+    a dedicated thread (a running loop's thread cannot be blocked). This
+    is what lets the sync ``verify_qa`` path execute async-only MCP tools.
+    """
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+        return pool.submit(asyncio.run, coro).result()
+
+
 class MockToolExecutor:
     """Keyless executor: registered tools with schemas + canned handlers."""
 
@@ -81,10 +106,12 @@ class MockToolExecutor:
         name: str,
         input_schema: Optional[dict] = None,
         handler: Optional[Callable[[dict], Any]] = None,
+        ahandler: Optional[Callable[[dict], Any]] = None,
     ) -> None:
         self._tools[name] = {
             "input_schema": input_schema or {},
             "handler": handler or (lambda tool_input: {"ok": True, "input": tool_input}),
+            "ahandler": ahandler,
         }
 
     def has_tool(self, name: str) -> bool:
@@ -98,18 +125,48 @@ class MockToolExecutor:
             raise KeyError(f"unknown tool: {tool_name!r}")
         return self._tools[tool_name]["handler"](tool_input)
 
+    async def acall(self, tool_name: str, tool_input: dict) -> Any:
+        """Async entry: uses the registered async handler, else the sync one."""
+        if tool_name not in self._tools:
+            raise KeyError(f"unknown tool: {tool_name!r}")
+        entry = self._tools[tool_name]
+        if entry["ahandler"] is not None:
+            result = entry["ahandler"](tool_input)
+        else:
+            result = entry["handler"](tool_input)
+        if asyncio.iscoroutine(result) or isinstance(result, asyncio.Future):
+            result = await result
+        return result
+
 
 class ToolGradExecutor:
     """Live executor over real ToolGrad / langchain tools.
 
-    ``tools_by_name`` maps tool name -> tool object exposing
-    ``.invoke(tool_input)`` (langchain ``StructuredTool``, incl. the MCP
-    tools discovered via the fork's ``discover_mcp_tools``). No LLM is
-    involved at this layer.
+    ``tools_by_name`` maps tool name -> tool object. ``call`` prefers the
+    tool's async path whenever one exists (``coroutine`` set) — the same
+    call shape the agent executor uses during generation — running it to
+    completion; tools with only a sync ``func`` go through ``invoke``.
+    This covers the fork's ``_wrap_with_path_prefix`` MCP tools, whose
+    sync ``func`` is built over ``None`` for async-only tools.
+    ``acall`` is the native async entry point.
+
+    ``loop_runner`` (a :class:`bridge.mcp_client.LoopRunner`) pins every
+    async tool call to the event loop that owns the MCP sessions, keeping
+    discovery and invocation on one loop. Every async call is additionally
+    bounded by ``verify_timeout_s`` so a stuck tool becomes a recorded
+    verification failure, never a dead run.
     """
 
-    def __init__(self, tools_by_name: Dict[str, Any]) -> None:
+    def __init__(
+        self,
+        tools_by_name: Dict[str, Any],
+        *,
+        loop_runner: Any = None,
+        verify_timeout_s: float = 60.0,
+    ) -> None:
         self._tools = dict(tools_by_name)
+        self._loop_runner = loop_runner
+        self._timeout = verify_timeout_s
 
     def has_tool(self, name: str) -> bool:
         return name in self._tools
@@ -121,10 +178,44 @@ class ToolGradExecutor:
             return schema.model_json_schema()
         return schema if isinstance(schema, dict) else {}
 
+    def _prefers_async(self, tool: Any) -> bool:
+        # Prefer the async path whenever the tool has one: it is the path the
+        # agent executor uses during generation, so verification replays the
+        # same call shape. This also covers the fork's wrapped MCP tools,
+        # whose sync ``func`` may be built over ``None`` for async-only tools.
+        return getattr(tool, "coroutine", None) is not None
+
+    def _invoke_coro(self, tool: Any, tool_input: dict):
+        """Coroutine running one async tool call bounded by the timeout."""
+
+        async def go():
+            return await asyncio.wait_for(
+                tool.ainvoke(tool_input), timeout=self._timeout)
+
+        return go()
+
     def call(self, tool_name: str, tool_input: dict) -> Any:
         if tool_name not in self._tools:
             raise KeyError(f"unknown tool: {tool_name!r}")
-        return self._tools[tool_name].invoke(tool_input)
+        tool = self._tools[tool_name]
+        if self._prefers_async(tool):
+            if self._loop_runner is not None:
+                return self._loop_runner.run(self._invoke_coro(tool, tool_input))
+            return _await_sync(self._invoke_coro(tool, tool_input))
+        return tool.invoke(tool_input)
+
+    async def acall(self, tool_name: str, tool_input: dict) -> Any:
+        if tool_name not in self._tools:
+            raise KeyError(f"unknown tool: {tool_name!r}")
+        tool = self._tools[tool_name]
+        if getattr(tool, "coroutine", None) is not None:
+            if self._loop_runner is not None:
+                return await asyncio.to_thread(
+                    self._loop_runner.run,
+                    self._invoke_coro(tool, tool_input))
+            return await asyncio.wait_for(
+                tool.ainvoke(tool_input), timeout=self._timeout)
+        return await asyncio.to_thread(tool.invoke, tool_input)
 
 
 def verify_qa(qa: dict, executor) -> dict:
@@ -168,6 +259,52 @@ def verify_qa(qa: dict, executor) -> dict:
             record["ok"] = True
         executed_steps.append(record)
 
+    return _verify_report(missing_tools, schema_mismatches, executed_steps)
+
+
+async def averify_qa(qa: dict, executor) -> dict:
+    """Async sibling of :func:`verify_qa`; executes steps via ``acall``.
+
+    Preferred when the caller already runs inside an event loop — avoids
+    the thread hop that sync ``call`` needs for async-only tools.
+    """
+    missing_tools: List[str] = []
+    schema_mismatches: List[dict] = []
+    executed_steps: List[dict] = []
+
+    for i, step in enumerate(qa.get("chain", [])):
+        tool = step.get("tool")
+        tool_input = step.get("tool_input", {})
+        record = {"step": i, "tool": tool, "ok": False, "error": None}
+
+        if not executor.has_tool(tool):
+            missing_tools.append(tool)
+            record["error"] = f"missing tool: {tool!r}"
+            executed_steps.append(record)
+            continue
+
+        try:
+            problems = _schema_problems(tool_input, executor.input_schema(tool))
+        except Exception as exc:  # noqa: BLE001 — schema lookup must not crash verify
+            problems = [f"schema lookup failed: {exc}"]
+        if problems:
+            schema_mismatches.append({"step": i, "tool": tool, "problems": problems})
+            record["error"] = "; ".join(problems)
+            executed_steps.append(record)
+            continue
+
+        try:
+            await executor.acall(tool, tool_input)
+        except Exception as exc:  # noqa: BLE001 — record, don't raise
+            record["error"] = f"{type(exc).__name__}: {exc}"
+        else:
+            record["ok"] = True
+        executed_steps.append(record)
+
+    return _verify_report(missing_tools, schema_mismatches, executed_steps)
+
+
+def _verify_report(missing_tools, schema_mismatches, executed_steps) -> dict:
     chain_valid = (
         not missing_tools
         and not schema_mismatches
@@ -186,11 +323,16 @@ def chain_toolkg_coverage(chain: Sequence[dict], toolkg) -> float:
     """Fraction of consecutive tool pairs in ``chain`` that are ToolKG edges.
 
     ``chain`` may be QA ``"chain"`` step dicts (``{"tool": ...}``) or bare
-    tool-name strings. Returns 0.0 for chains shorter than 2 steps.
+    tool-name strings. A single-step chain is vacuously composable and
+    scores 1.0; an empty chain, or a missing ToolKG, scores 0.0.
     """
     names = [s.get("tool") if isinstance(s, dict) else s for s in chain]
     names = [n for n in names if n]
-    if toolkg is None or len(names) < 2:
+    if not names:
+        return 0.0
+    if len(names) == 1:
+        return 1.0
+    if toolkg is None:
         return 0.0
     hits = sum(1 for a, b in zip(names, names[1:]) if toolkg.has_edge(a, b))
     return hits / (len(names) - 1)

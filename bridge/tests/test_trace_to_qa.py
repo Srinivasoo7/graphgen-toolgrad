@@ -124,3 +124,19 @@ def test_to_chatml_shape():
     assert "list_directory" in turns[1]["content"]  # available tools listed
     assert "Executed chain:" in turns[2]["content"]
     assert qa["answer_draft"] in turns[2]["content"]
+
+
+def test_ground_entities_includes_step_tool_names():
+    # A domain KG may model the tools themselves as entities; a chain that
+    # invokes such a tool is anchored to it even when inputs/results are bare.
+    g = nx.Graph()
+    g.add_node("n1", entity_name="list_directory", entity_type="TOOL")
+    kg = kg_context_exporter.export_kg_context(g)
+    chain = {
+        "chain_id": "c0",
+        "steps": [
+            {"tool": "list_directory", "tool_input": {"path": "."},
+             "result_preview": "3 files"},
+        ],
+    }
+    assert trace_to_qa.ground_entities(chain, kg) == ["list_directory"]
