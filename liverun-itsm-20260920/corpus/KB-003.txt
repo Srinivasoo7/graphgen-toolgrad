@@ -1,0 +1,9 @@
+Printer shows offline: rejoin the follow-me print queue
+Category: Facilities / Printing
+
+Symptom: the printer shows offline or jobs sit in the queue.
+Resolution steps:
+1. Confirm the printer has power and a network link light.
+2. On your laptop, remove the old direct printer and add 'FollowMe-Print' from the software center.
+3. Badge in at any FollowMe printer to release your jobs.
+If jobs still stall, note the printer hostname (sticker on the front) and open a ticket; do not reinstall drivers manually.

@@ -1,0 +1,46 @@
+[
+  {
+    "question": "What is the status of the ticket INC-1042?",
+    "answer_draft": "The status of ticket INC-1042 is Open.",
+    "required_tools": [
+      "create_ticket"
+    ],
+    "chain": [
+      {
+        "tool": "create_ticket",
+        "tool_input": {
+          "priority": "P2",
+          "category": "Hardware",
+          "title": "Laptop Hardware Issue",
+          "description": "The laptop is experiencing performance issues. Please investigate and resolve."
+        },
+        "result_preview": "([{'type': 'text', 'text': '{\\n  \"ticket_id\": \"INC-1042\",\\n  \"title\": \"Laptop Hardware Issue\",\\n  \"description\": \"The laptop is experiencing performance issues. Please investigate and resolve.\",\\n  \"category\": \"Hardware\",\\n  \"priority\": \"P2\",\\n  \"status\": \"Open\",\\n  \"notes\": []\\n}', 'id': 'lc_6890d3..."
+      }
+    ],
+    "entity_refs": [
+      "ticket",
+      "laptop"
+    ],
+    "provenance": {
+      "source": "toolgrad_trace",
+      "chain_id": "api_use_chain_2",
+      "trace_seed": 11,
+      "toolkg_edges_used": 0,
+      "kg_entity_count": 40
+    },
+    "verification": {
+      "chain_valid": true,
+      "missing_tools": [],
+      "schema_mismatches": [],
+      "executed_steps": [
+        {
+          "step": 0,
+          "tool": "create_ticket",
+          "ok": true,
+          "error": null
+        }
+      ]
+    },
+    "coverage": 1.0
+  }
+]

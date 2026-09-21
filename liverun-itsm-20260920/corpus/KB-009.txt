@@ -1,0 +1,8 @@
+You received a phishing email: report it
+Category: Security / Phishing
+
+If an email looks suspicious:
+1. Do NOT click links or open attachments.
+2. Click the 'Report Phish' button in Outlook; this quarantines the message and alerts Security.
+3. If you already clicked, disconnect from VPN/Wi-Fi and call the security hotline immediately.
+Telltale signs: urgent tone, unexpected attachment, sender domain that is close-but-wrong, or a request for credentials or gift cards.

@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d8" for="node" attr.name="num_outputs" attr.type="long" />
+  <key id="d7" for="node" attr.name="num_inputs" attr.type="long" />
+  <key id="d6" for="node" attr.name="outputs_json" attr.type="string" />
+  <key id="d5" for="node" attr.name="inputs_json" attr.type="string" />
+  <key id="d4" for="node" attr.name="description" attr.type="string" />
+  <key id="d3" for="node" attr.name="entity_type" attr.type="string" />
+  <key id="d2" for="node" attr.name="entity_name" attr.type="string" />
+  <key id="d1" for="graph" attr.name="threshold" attr.type="double" />
+  <key id="d0" for="graph" attr.name="toolkg_version" attr.type="string" />
+  <graph edgedefault="directed">
+    <node id="search_kb">
+      <data key="d2">search_kb</data>
+      <data key="d3">tool</data>
+      <data key="d4">Search the IT knowledge base. Returns ranked article summaries
+    (id, title, category, snippet). Use get_kb_article for full text.</data>
+      <data key="d5">[{"name": "query", "type": "string", "description": ""}, {"name": "top_k", "type": "integer", "description": ""}]</data>
+      <data key="d6">[{"name": "content", "type": "content"}, {"name": "metadata", "type": "object"}]</data>
+      <data key="d7">2</data>
+      <data key="d8">2</data>
+    </node>
+    <node id="get_kb_article">
+      <data key="d2">get_kb_article</data>
+      <data key="d3">tool</data>
+      <data key="d4">Fetch the full text of a knowledge-base article by id (e.g. 'KB-001').</data>
+      <data key="d5">[{"name": "article_id", "type": "string", "description": ""}]</data>
+      <data key="d6">[{"name": "content", "type": "content"}]</data>
+      <data key="d7">1</data>
+      <data key="d8">1</data>
+    </node>
+    <node id="create_ticket">
+      <data key="d2">create_ticket</data>
+      <data key="d3">tool</data>
+      <data key="d4">Open a service-desk ticket. Category examples: Network, Hardware,
+    Software, Identity, Security, Facilities. Priority: P1 (critical) to
+    P4 (low). Returns the new ticket record.</data>
+      <data key="d5">[{"name": "title", "type": "string", "description": ""}, {"name": "description", "type": "string", "description": ""}, {"name": "category", "type": "string", "description": ""}, {"name": "priority", "type": "string", "description": ""}]</data>
+      <data key="d6">[]</data>
+      <data key="d7">4</data>
+      <data key="d8">0</data>
+    </node>
+    <node id="get_ticket">
+      <data key="d2">get_ticket</data>
+      <data key="d3">tool</data>
+      <data key="d4">Fetch a ticket by id (e.g. 'INC-1042').</data>
+      <data key="d5">[{"name": "ticket_id", "type": "string", "description": ""}]</data>
+      <data key="d6">[]</data>
+      <data key="d7">1</data>
+      <data key="d8">0</data>
+    </node>
+    <node id="update_ticket">
+      <data key="d2">update_ticket</data>
+      <data key="d3">tool</data>
+      <data key="d4">Update a ticket's status (Open, In Progress, Resolved, Closed) and
+    optionally append a work note.</data>
+      <data key="d5">[{"name": "ticket_id", "type": "string", "description": ""}, {"name": "status", "type": "string", "description": ""}, {"name": "note", "type": "string", "description": ""}]</data>
+      <data key="d6">[]</data>
+      <data key="d7">3</data>
+      <data key="d8">0</data>
+    </node>
+    <node id="list_open_tickets">
+      <data key="d2">list_open_tickets</data>
+      <data key="d3">tool</data>
+      <data key="d4">List all tickets that are not Resolved or Closed.</data>
+      <data key="d5">[]</data>
+      <data key="d6">[{"name": "listing", "type": "array"}]</data>
+      <data key="d7">0</data>
+      <data key="d8">1</data>
+    </node>
+    <node id="lookup_asset">
+      <data key="d2">lookup_asset</data>
+      <data key="d3">tool</data>
+      <data key="d4">Look up a hardware asset by tag (e.g. 'LT-1042'). Returns model, OS,
+    assignee, status, and location.</data>
+      <data key="d5">[{"name": "asset_tag", "type": "string", "description": ""}]</data>
+      <data key="d6">[]</data>
+      <data key="d7">1</data>
+      <data key="d8">0</data>
+    </node>
+    <data key="d0">0.1.0</data>
+    <data key="d1">0.34</data>
+  </graph>
+</graphml>

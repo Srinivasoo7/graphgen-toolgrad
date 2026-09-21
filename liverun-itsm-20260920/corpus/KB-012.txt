@@ -1,0 +1,8 @@
+BitLocker recovery key retrieval
+Category: Security / Encryption
+
+If Windows prompts for a BitLocker recovery key at boot:
+1. On another device, sign in to the device management portal and open your device to view the 48-digit key.
+2. Enter it carefully; 5 wrong attempts lock the volume further.
+3. After booting, the desk can suspend and re-enable BitLocker to clear the prompt loop.
+The desk can read keys only after verifying your identity; keys are never sent over chat.

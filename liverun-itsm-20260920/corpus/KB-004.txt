@@ -1,0 +1,9 @@
+Requesting a new laptop for a new hire
+Category: Hardware / Provisioning
+
+Laptop requests for new hires go through the hardware catalog:
+1. The hiring manager submits a request at least 10 business days before the start date.
+2. Standard issue: 14-inch business laptop, 16 GB RAM, 512 GB SSD.
+3. Engineering roles may request the 32 GB RAM configuration with director approval.
+4. IT images the machine and ships it to the employee's home or holds it at the front desk.
+Track the request with the ticket number issued at submission.

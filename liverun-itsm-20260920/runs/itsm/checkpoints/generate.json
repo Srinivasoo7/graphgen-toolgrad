@@ -1,0 +1,17 @@
+{
+  "num_samples": 5,
+  "num_chains_requested": 6,
+  "num_chain_failures": 0,
+  "per_chain_failures": [],
+  "llm_calls": 85,
+  "sample_paths": [
+    "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/seed=7__iter=3__num_apis=5.json",
+    "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/seed=8__iter=3__num_apis=5.json",
+    "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/seed=9__iter=3__num_apis=5.json",
+    "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/seed=10__iter=3__num_apis=5.json",
+    "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/seed=11__iter=3__num_apis=5.json"
+  ],
+  "status": "ok",
+  "duration_s": 130.7,
+  "bridge_version": "42b4d5043b2fd855"
+}

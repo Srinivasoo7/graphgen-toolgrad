@@ -1,0 +1,9 @@
+Outlook not syncing: rebuild the OST
+Category: Email / Collaboration
+
+Symptom: Outlook shows 'Disconnected' or new mail never arrives.
+Resolution steps:
+1. Check the status bar: if it says 'Working Offline', toggle it off under Send/Receive.
+2. If still stuck, close Outlook, delete the .ost file under %LOCALAPPDATA%\Microsoft\Outlook, and reopen Outlook to rebuild.
+3. For shared mailboxes that stay stale, remove and re-add the mailbox under Account Settings.
+Do not delete the mailbox profile itself; the OST rebuild preserves all server-side mail.

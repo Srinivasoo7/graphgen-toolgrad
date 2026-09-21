@@ -1,0 +1,8 @@
+VPN on macOS: import the Tunnelblick profile
+Category: Network / VPN
+
+macOS users connect with Tunnelblick:
+1. Install Tunnelblick from the Company Portal.
+2. Download your personal .tblk profile from the VPN self-service page (requires MFA).
+3. Double-click the profile to import, then Connect from the menu bar icon.
+Profiles expire after 365 days; re-download from the same page. Do not share profiles between users.

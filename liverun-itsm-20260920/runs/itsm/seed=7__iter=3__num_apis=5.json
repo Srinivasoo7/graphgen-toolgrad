@@ -1,0 +1,40 @@
+{
+  "query": "My CRM application keeps crashing whenever I try to export a report. I also received a weird email today about a phishing attempt, and I'm not sure if it's related.",
+  "api_use_chains": {
+    "api_use_chain_1": {
+      "chain_id": "api_use_chain_1",
+      "intermediate_steps": [
+        [
+          {
+            "tool": "create_ticket",
+            "tool_input": {
+              "description": "The CRM application crashes every time I try to export a report.",
+              "category": "Software",
+              "title": "Application Crashing",
+              "priority": "P2"
+            },
+            "log": "\nInvoking: `create_ticket` with `{'description': 'The CRM application crashes every time I try to export a report.', 'category': 'Software', 'title': 'Application Crashing', 'priority': 'P2'}`\n\n\n",
+            "type": "AgentActionMessageLog",
+            "message_log": [],
+            "tool_call_id": "tool_create_ticket_xoOLlujhZmzpwjkSKOEE"
+          },
+          "([{'type': 'text', 'text': '{\\n  \"ticket_id\": \"INC-1042\",\\n  \"title\": \"Application Crashing\",\\n  \"description\": \"The CRM application crashes every time I try to export a report.\",\\n  \"category\": \"Software\",\\n  \"priority\": \"P2\",\\n  \"status\": \"Open\",\\n  \"notes\": []\\n}', 'id': 'lc_c9baf7d4-a20c-4a66-b56f-e40f81584fdf'}], {'structured_content': {'result': '{\\n  \"ticket_id\": \"INC-1042\",\\n  \"title\": \"Application Crashing\",\\n  \"description\": \"The CRM application crashes every time I try to export a report.\",\\n  \"category\": \"Software\",\\n  \"priority\": \"P2\",\\n  \"status\": \"Open\",\\n  \"notes\": []\\n}'}})"
+        ],
+        [
+          {
+            "tool": "search_kb",
+            "tool_input": {
+              "query": "CRM application export report crashing"
+            },
+            "log": "\nInvoking: `search_kb` with `{'query': 'CRM application export report crashing'}`\n\n\n",
+            "type": "AgentActionMessageLog",
+            "message_log": [],
+            "tool_call_id": "tool_search_kb_749HsMtoh1wqTzsdUDUc"
+          },
+          "([{'type': 'text', 'text': '{\\n  \"query\": \"CRM application export report crashing\",\\n  \"results\": [\\n    {\\n      \"article_id\": \"KB-009\",\\n      \"title\": \"You received a phishing email: report it\",\\n      \"category\": \"Security / Phishing\",\\n      \"snippet\": \"If an email looks suspicious:\\\\n1. Do NOT click links or open attachments.\\\\n2. Click the \\'Report Phish\\' button in Outlook; this quarantines the message and alerts Security.\\\\n3. If you already clicked, disconnect from VPN/Wi-...\"\\n    }\\n  ]\\n}', 'id': 'lc_3ce045a8-3be5-427f-ba91-ebbeb074e240'}], {'structured_content': {'result': '{\\n  \"query\": \"CRM application export report crashing\",\\n  \"results\": [\\n    {\\n      \"article_id\": \"KB-009\",\\n      \"title\": \"You received a phishing email: report it\",\\n      \"category\": \"Security / Phishing\",\\n      \"snippet\": \"If an email looks suspicious:\\\\n1. Do NOT click links or open attachments.\\\\n2. Click the \\'Report Phish\\' button in Outlook; this quarantines the message and alerts Security.\\\\n3. If you already clicked, disconnect from VPN/Wi-...\"\\n    }\\n  ]\\n}'}})"
+        ]
+      ]
+    }
+  },
+  "response": "I have created a support ticket, INC-1042, for the CRM application crashing when exporting reports. The priority is set to P2. I also searched our knowledge base for information regarding CRM application export report crashing, but the relevant article was about reporting phishing emails. Please let me know if you have any further issues."
+}

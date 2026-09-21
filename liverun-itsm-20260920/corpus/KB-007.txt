@@ -1,0 +1,9 @@
+Requesting software installation (admin approval)
+Category: Software / Licensing
+
+Approved software is installed from the Company Portal (self-service).
+For software not in the portal:
+1. Open a ticket with the software name, version, vendor, and business justification.
+2. Your manager approves in the ticket; Security reviews the vendor.
+3. Typical turnaround is 3 business days after approvals.
+Never install with local admin rights granted for another purpose; misuse is revoked and logged.

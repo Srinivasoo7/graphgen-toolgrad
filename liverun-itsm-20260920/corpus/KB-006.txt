@@ -1,0 +1,9 @@
+Corporate Wi-Fi certificate renewal (CORP-WIFI)
+Category: Network / Wi-Fi
+
+CORP-WIFI uses EAP-TLS certificates that expire yearly.
+Renewal steps:
+1. While on any network, open the Company Portal and install the 'WiFi Certificate 2026' profile.
+2. Forget CORP-WIFI, then rejoin; authentication is automatic.
+3. On macOS, approve the new profile in System Settings > Profiles.
+Expiry warnings start 14 days out. If the portal shows no profile, open a ticket so Identity can re-push enrollment.

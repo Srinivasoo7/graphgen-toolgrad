@@ -1,0 +1,8 @@
+Reset your password with Okta self-service
+Category: Identity / Access
+
+Use Okta self-service to reset a forgotten password without calling the desk:
+1. Go to the Okta sign-in page and click 'Need help signing in' > 'Forgot password'.
+2. Enter your corporate email and complete MFA verification.
+3. Choose a new password meeting the policy: 14+ characters, upper, lower, digit, symbol.
+Note: after a reset, re-authenticate on mobile mail and VPN. Accounts locked by too many attempts auto-unlock after 30 minutes; the desk can unlock immediately on verified identity.

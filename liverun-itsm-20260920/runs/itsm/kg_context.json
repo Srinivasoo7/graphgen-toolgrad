@@ -1,0 +1,539 @@
+{
+  "entities": [
+    {
+      "name": "ticket",
+      "entity_type": "concept+document+request+support request",
+      "description": "A record of a request for shared drive access.",
+      "degree": 19
+    },
+    {
+      "name": "user",
+      "entity_type": "concept",
+      "description": "user",
+      "degree": 9
+    },
+    {
+      "name": "password reset",
+      "entity_type": "Process+concept",
+      "description": "Process of resetting a forgotten password.",
+      "degree": 7
+    },
+    {
+      "name": "laptop request",
+      "entity_type": "concept+process",
+      "description": "A request for a new laptop",
+      "degree": 6
+    },
+    {
+      "name": "phishing email",
+      "entity_type": "concept+email",
+      "description": "An email that attempts to deceive the recipient.",
+      "degree": 6
+    },
+    {
+      "name": "slow laptop",
+      "entity_type": "concept",
+      "description": "slow laptop",
+      "degree": 6
+    },
+    {
+      "name": "Tunnelblick",
+      "entity_type": "Application+concept",
+      "description": "VPN client for macOS",
+      "degree": 5
+    },
+    {
+      "name": "software installation",
+      "entity_type": "concept+process",
+      "description": "The process of installing software.",
+      "degree": 5
+    },
+    {
+      "name": "Company Portal",
+      "entity_type": "Application+application+concept+system",
+      "description": "Application for managing company resources on devices",
+      "degree": 4
+    },
+    {
+      "name": "IKEv2 UDP ports 500 and 4500",
+      "entity_type": "Network Port+concept",
+      "description": "Specific UDP ports used by the IKEv2 protocol for VPN connections.",
+      "degree": 4
+    },
+    {
+      "name": "Outlook",
+      "entity_type": "Application+concept+software",
+      "description": "Email and collaboration client",
+      "degree": 4
+    },
+    {
+      "name": "VPN",
+      "entity_type": "Application+Service+concept+network",
+      "description": "Virtual Private Network service.",
+      "degree": 4
+    },
+    {
+      "name": "VPN error 809",
+      "entity_type": "Error+concept",
+      "description": "An error code related to VPN connection failure on Windows.",
+      "degree": 4
+    },
+    {
+      "name": "business laptop",
+      "entity_type": "concept+hardware",
+      "description": "A standard laptop for business use",
+      "degree": 4
+    },
+    {
+      "name": "desk",
+      "entity_type": "System+concept+role",
+      "description": "Refers to the system or administrative tool that manages BitLocker.",
+      "degree": 4
+    },
+    {
+      "name": "printer",
+      "entity_type": "concept+device",
+      "description": "A machine that prints documents.",
+      "degree": 4
+    },
+    {
+      "name": ".tblk profile",
+      "entity_type": "Configuration File+concept",
+      "description": "Tunnelblick VPN configuration file",
+      "degree": 3
+    },
+    {
+      "name": "BitLocker recovery key",
+      "entity_type": "Security Feature+concept",
+      "description": "A 48-digit key used to unlock a BitLocker encrypted drive.",
+      "degree": 3
+    },
+    {
+      "name": "CORP-WIFI",
+      "entity_type": "concept+service",
+      "description": "Corporate Wi-Fi service",
+      "degree": 3
+    },
+    {
+      "name": "MFA verification",
+      "entity_type": "Process+concept",
+      "description": "Multi-factor authentication verification step.",
+      "degree": 3
+    },
+    {
+      "name": "OST file",
+      "entity_type": "File+concept",
+      "description": "Offline storage table file for Outlook",
+      "degree": 3
+    },
+    {
+      "name": "Okta",
+      "entity_type": "Organization+concept",
+      "description": "Identity and access management company.",
+      "degree": 3
+    },
+    {
+      "name": "RAM",
+      "entity_type": "concept+hardware spec",
+      "description": "Random Access Memory",
+      "degree": 3
+    },
+    {
+      "name": "Report Phish button",
+      "entity_type": "button+concept",
+      "description": "A button in Outlook used to report phishing emails.",
+      "degree": 3
+    },
+    {
+      "name": "Status bar",
+      "entity_type": "UI Element+concept",
+      "description": "Indicator in Outlook showing connection status",
+      "degree": 3
+    },
+    {
+      "name": "Windows",
+      "entity_type": "Operating System+concept",
+      "description": "The operating system that prompts for the BitLocker recovery key.",
+      "degree": 3
+    },
+    {
+      "name": "Working Offline",
+      "entity_type": "concept",
+      "description": "Working Offline",
+      "degree": 3
+    },
+    {
+      "name": "approval",
+      "entity_type": "action+concept",
+      "description": "The act of consenting to a shared drive access request.",
+      "degree": 3
+    },
+    {
+      "name": "laptop",
+      "entity_type": "concept+device",
+      "description": "A portable personal computer.",
+      "degree": 3
+    },
+    {
+      "name": "machine",
+      "entity_type": "concept+hardware",
+      "description": "The laptop being provisioned",
+      "degree": 3
+    },
+    {
+      "name": "profile",
+      "entity_type": "Configuration File+concept",
+      "description": "General term for VPN configuration profile",
+      "degree": 3
+    },
+    {
+      "name": "Advanced settings",
+      "entity_type": "Configuration Setting+concept",
+      "description": "Advanced configuration options within Windows Defender Firewall.",
+      "degree": 2
+    },
+    {
+      "name": "EAP-TLS certificate",
+      "entity_type": "certificate+concept",
+      "description": "Certificate type used by CORP-WIFI",
+      "degree": 2
+    },
+    {
+      "name": "FollowMe-Print",
+      "entity_type": "concept",
+      "description": "FollowMe-Print",
+      "degree": 2
+    },
+    {
+      "name": "IKEv2",
+      "entity_type": "Protocol+concept",
+      "description": "Internet Key Exchange version 2, a VPN tunneling protocol.",
+      "degree": 2
+    },
+    {
+      "name": "Inbound Rules",
+      "entity_type": "Configuration Setting+concept",
+      "description": "Rules within the firewall that govern incoming network traffic.",
+      "degree": 2
+    },
+    {
+      "name": "Security",
+      "entity_type": "concept+department",
+      "description": "The department responsible for security.",
+      "degree": 2
+    },
+    {
+      "name": "Shared mailbox",
+      "entity_type": "Mailbox Type+concept",
+      "description": "Mailbox shared among multiple users",
+      "degree": 2
+    },
+    {
+      "name": "System Settings",
+      "entity_type": "application+concept",
+      "description": "macOS application for system settings",
+      "degree": 2
+    },
+    {
+      "name": "UDP ports 500 and 4500",
+      "entity_type": "concept",
+      "description": "UDP ports 500 and 4500",
+      "degree": 2
+    }
+  ],
+  "triples": [
+    {
+      "head": "ticket",
+      "relation": "opens",
+      "tail": "user",
+      "description": "Submit a support request."
+    },
+    {
+      "head": "ticket",
+      "relation": "is for",
+      "tail": "slow laptop",
+      "description": "A ticket is opened to address a slow laptop."
+    },
+    {
+      "head": "ticket",
+      "relation": "initiated by opening",
+      "tail": "software installation",
+      "description": "Software installation is initiated by opening a ticket for unlisted software."
+    },
+    {
+      "head": "ticket",
+      "relation": "routes",
+      "tail": "desk",
+      "description": "The desk routes the ticket for approval."
+    },
+    {
+      "head": "ticket",
+      "relation": "is for re-pushing",
+      "tail": "enrollment",
+      "description": "A ticket is for re-pushing enrollment by Identity"
+    },
+    {
+      "head": "ticket",
+      "relation": "is to be noted in",
+      "tail": "printer hostname",
+      "description": "The printer hostname should be included in the support ticket."
+    },
+    {
+      "head": "ticket",
+      "relation": "names",
+      "tail": "shared drive",
+      "description": "A ticket names the shared drive for which access is requested."
+    },
+    {
+      "head": "ticket",
+      "relation": "indicates need for",
+      "tail": "slowness",
+      "description": "Persistent slowness indicates the need to open a ticket."
+    },
+    {
+      "head": "ticket",
+      "relation": "should include",
+      "tail": "asset tag",
+      "description": "An asset tag should be included when opening a ticket."
+    },
+    {
+      "head": "ticket",
+      "relation": "includes",
+      "tail": "business justification",
+      "description": "A ticket for software installation includes the business justification."
+    },
+    {
+      "head": "ticket",
+      "relation": "states",
+      "tail": "business need",
+      "description": "A ticket states the business need for shared drive access."
+    },
+    {
+      "head": "ticket",
+      "relation": "opened when",
+      "tail": "jobs still stall",
+      "description": "A support ticket should be opened if print jobs continue to be stalled."
+    },
+    {
+      "head": "ticket",
+      "relation": "approves in",
+      "tail": "manager",
+      "description": "The manager approves the software installation request in the ticket."
+    },
+    {
+      "head": "ticket",
+      "relation": "opened when",
+      "tail": "portal shows no profile",
+      "description": "A ticket is opened if the portal shows no profile"
+    },
+    {
+      "head": "ticket",
+      "relation": "documented_in",
+      "tail": "request",
+      "description": "A request for shared drive access is documented in a ticket."
+    },
+    {
+      "head": "ticket",
+      "relation": "routed_to",
+      "tail": "share owner",
+      "description": "The ticket is routed to the share owner for approval."
+    },
+    {
+      "head": "ticket",
+      "relation": "includes",
+      "tail": "software name",
+      "description": "A ticket for software installation includes the software name."
+    },
+    {
+      "head": "ticket",
+      "relation": "includes",
+      "tail": "software vendor",
+      "description": "A ticket for software installation includes the software vendor."
+    },
+    {
+      "head": "ticket",
+      "relation": "includes",
+      "tail": "software version",
+      "description": "A ticket for software installation includes the software version."
+    },
+    {
+      "head": "VPN",
+      "relation": "should disconnect from",
+      "tail": "user",
+      "description": "If a user clicked on a phishing email, they should disconnect from VPN."
+    },
+    {
+      "head": "password reset",
+      "relation": "requires re-authentication on",
+      "tail": "VPN",
+      "description": "After a password reset, VPN requires re-authentication."
+    },
+    {
+      "head": "user",
+      "relation": "release",
+      "tail": "print jobs",
+      "description": "To make pending print jobs available for printing."
+    },
+    {
+      "head": "followme printer",
+      "relation": "badge in at",
+      "tail": "user",
+      "description": "Authenticate at a follow-me printer using a badge."
+    },
+    {
+      "head": "laptop request",
+      "relation": "includes",
+      "tail": "business laptop",
+      "description": "The laptop request includes a standard business laptop."
+    },
+    {
+      "head": "password reset",
+      "relation": "requires",
+      "tail": "MFA verification",
+      "description": "Password reset requires MFA verification."
+    },
+    {
+      "head": "user",
+      "relation": "should disconnect from",
+      "tail": "Wi-Fi",
+      "description": "If a user clicked on a phishing email, they should disconnect from Wi-Fi."
+    },
+    {
+      "head": "user",
+      "relation": "should not open",
+      "tail": "attachments",
+      "description": "Users should avoid opening attachments in suspicious emails."
+    },
+    {
+      "head": "user",
+      "relation": "should not click",
+      "tail": "links",
+      "description": "Users should avoid clicking links in suspicious emails."
+    },
+    {
+      "head": "user",
+      "relation": "should not",
+      "tail": "reinstall drivers manually",
+      "description": "Users should refrain from manually reinstalling printer drivers."
+    }
+  ],
+  "communities": [
+    {
+      "id": 0,
+      "size": 78,
+      "members": [
+        "ticket",
+        "user",
+        "password reset",
+        "slow laptop",
+        "Tunnelblick",
+        "software installation",
+        "Company Portal",
+        "VPN"
+      ],
+      "summary": "Topic cluster of 78 entities, centered on ticket, user, password reset, slow laptop, Tunnelblick, \u2026."
+    },
+    {
+      "id": 1,
+      "size": 17,
+      "members": [
+        "phishing email",
+        "Outlook",
+        "OST file",
+        "Report Phish button",
+        "Status bar",
+        "Working Offline",
+        "Security",
+        "%LOCALAPPDATA%\\Microsoft\\Outlook"
+      ],
+      "summary": "Topic cluster of 17 entities, centered on phishing email, Outlook, OST file, Report Phish button, Status bar, \u2026."
+    },
+    {
+      "id": 2,
+      "size": 14,
+      "members": [
+        "IKEv2 UDP ports 500 and 4500",
+        "VPN error 809",
+        "BitLocker recovery key",
+        "Windows",
+        "IKEv2",
+        "client protocol",
+        "corporate VPN client",
+        "home router"
+      ],
+      "summary": "Topic cluster of 14 entities, centered on IKEv2 UDP ports 500 and 4500, VPN error 809, BitLocker recovery key, Windows, IKEv2, \u2026."
+    },
+    {
+      "id": 3,
+      "size": 12,
+      "members": [
+        "laptop request",
+        "business laptop",
+        "RAM",
+        "hiring manager",
+        "ticket number",
+        "SSD",
+        "director approval",
+        "engineering role"
+      ],
+      "summary": "Topic cluster of 12 entities, centered on laptop request, business laptop, RAM, hiring manager, ticket number, \u2026."
+    },
+    {
+      "id": 4,
+      "size": 5,
+      "members": [
+        "Advanced settings",
+        "Inbound Rules",
+        "UDP ports 500 and 4500",
+        "VPN client executable",
+        "Windows Defender Firewall"
+      ],
+      "summary": "Topic cluster of 5 entities, centered on Advanced settings, Inbound Rules, UDP ports 500 and 4500, VPN client executable, Windows Defender Firewall."
+    },
+    {
+      "id": 5,
+      "size": 5,
+      "members": [
+        "laptop",
+        "FollowMe-Print",
+        "old direct printer",
+        "slow",
+        "software center"
+      ],
+      "summary": "Topic cluster of 5 entities, centered on laptop, FollowMe-Print, old direct printer, slow, software center."
+    },
+    {
+      "id": 6,
+      "size": 5,
+      "members": [
+        "printer",
+        "network link light",
+        "offline",
+        "power",
+        "rejoin follow-me print queue"
+      ],
+      "summary": "Topic cluster of 5 entities, centered on printer, network link light, offline, power, rejoin follow-me print queue."
+    },
+    {
+      "id": 7,
+      "size": 4,
+      "members": [
+        "machine",
+        "IT",
+        "employee home",
+        "front desk"
+      ],
+      "summary": "Topic cluster of 4 entities, centered on machine, IT, employee home, front desk."
+    }
+  ],
+  "meta": {
+    "node_count": 175,
+    "edge_count": 154,
+    "directed": false,
+    "exported_entities": 40,
+    "exported_triples": 29,
+    "exported_communities": 8,
+    "estimated_tokens": 1989,
+    "max_tokens": 2000
+  }
+}

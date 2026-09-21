@@ -1,0 +1,11 @@
+VPN error 809 on Windows: enable IKEv2 passthrough
+Category: Network / VPN
+
+Symptom: The corporate VPN client fails on Windows with error 809 ('The network connection between your computer and the VPN server could not be established').
+Cause: IKEv2 UDP ports 500 and 4500 are blocked by the local firewall or the home router.
+Resolution steps:
+1. Open Windows Defender Firewall > Advanced settings > Inbound Rules.
+2. Allow UDP ports 500 and 4500 for the VPN client executable.
+3. On the home router, enable VPN/IPSec passthrough.
+4. Retry the connection. If it still fails, switch the client protocol from Automatic to IKEv2 explicitly and retry.
+Escalate to NetOps if the failure persists off the corporate network.

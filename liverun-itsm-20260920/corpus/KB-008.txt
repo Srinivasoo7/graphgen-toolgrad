@@ -1,0 +1,9 @@
+Laptop running slow: first checks
+Category: Hardware / Performance
+
+Before opening a ticket for a slow laptop, run these checks:
+1. Restart the machine (not sleep, a full restart).
+2. Open Task Manager / Activity Monitor: if disk is pinned at 100%, free at least 20% disk space.
+3. Disable unneeded login items and browser extensions.
+4. Confirm the EDR agent shows 'Healthy' in the tray; a failing agent can throttle the disk.
+If slowness persists with 20%+ free disk, open a ticket and include the asset tag.

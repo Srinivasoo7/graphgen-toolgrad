@@ -1,0 +1,52 @@
+{
+  "config": {
+    "max_iterations": 3,
+    "min_coverage": 0.5,
+    "require_chain_valid": true,
+    "require_entities": true,
+    "seed": 7
+  },
+  "num_samples": 5,
+  "gen_stats": {
+    "num_samples": 5,
+    "num_chains": 6,
+    "num_chains_empty": 0,
+    "num_qa_pairs": 6
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "num_pairs": 6,
+      "num_chain_valid": 6,
+      "num_entity_grounded": 6,
+      "mean_coverage": 0.16666666666666666,
+      "num_refined": 5,
+      "num_kept": 1,
+      "num_rejected": 5,
+      "num_semantic_filtered": 0
+    },
+    {
+      "iteration": 1,
+      "num_pairs": 6,
+      "num_chain_valid": 6,
+      "num_entity_grounded": 6,
+      "mean_coverage": 0.16666666666666666,
+      "num_refined": 5,
+      "num_kept": 1,
+      "num_rejected": 5,
+      "num_semantic_filtered": 0
+    },
+    {
+      "iteration": 2,
+      "num_pairs": 6,
+      "num_chain_valid": 6,
+      "num_entity_grounded": 6,
+      "mean_coverage": 0.16666666666666666,
+      "num_refined": 5,
+      "num_kept": 1,
+      "num_rejected": 5,
+      "num_semantic_filtered": 0
+    }
+  ],
+  "stopped_reason": "max_iterations"
+}

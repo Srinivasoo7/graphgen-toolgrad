@@ -1,0 +1,21 @@
+{
+  "stats": {
+    "num_tools": 7,
+    "num_edges": 0,
+    "density": 0,
+    "avg_out_degree": 0.0,
+    "isolated_tools": [
+      "create_ticket",
+      "get_kb_article",
+      "get_ticket",
+      "list_open_tickets",
+      "lookup_asset",
+      "search_kb",
+      "update_ticket"
+    ]
+  },
+  "path": "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/toolkg.graphml",
+  "status": "ok",
+  "duration_s": 0.1,
+  "bridge_version": "42b4d5043b2fd855"
+}

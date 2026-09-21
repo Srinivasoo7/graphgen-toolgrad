@@ -1,0 +1,8 @@
+Requesting access to a shared drive
+Category: Identity / Access
+
+Shared-drive access needs the data owner's approval:
+1. Open a ticket naming the share (\\files\dept-share) and your business need.
+2. The desk routes it to the share owner for approval.
+3. Access is provisioned within 1 business day of approval and reviewed quarterly.
+Contractors receive read-only access by default.

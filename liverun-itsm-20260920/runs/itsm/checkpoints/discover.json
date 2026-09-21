@@ -1,0 +1,18 @@
+{
+  "num_tools": 7,
+  "tools_by_server": {
+    "itsm": 7
+  },
+  "tool_names": [
+    "create_ticket",
+    "get_kb_article",
+    "get_ticket",
+    "list_open_tickets",
+    "lookup_asset",
+    "search_kb",
+    "update_ticket"
+  ],
+  "status": "ok",
+  "duration_s": 1.9,
+  "bridge_version": "42b4d5043b2fd855"
+}

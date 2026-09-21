@@ -1,0 +1,13 @@
+{
+  "stopped_reason": "max_iterations",
+  "num_kept": 1,
+  "num_samples": 5,
+  "num_chain_valid": 6,
+  "num_entity_grounded": 6,
+  "mean_coverage": 0.16666666666666666,
+  "redaction_hits": {},
+  "kept_path": "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/kept.json",
+  "status": "ok",
+  "duration_s": 58.4,
+  "bridge_version": "42b4d5043b2fd855"
+}

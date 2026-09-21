@@ -1,0 +1,11 @@
+{
+  "num_train": 0,
+  "num_valid": 1,
+  "train_path": "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/sft_mix/train.jsonl",
+  "valid_path": "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/sft_mix/valid.jsonl",
+  "secret_scan_clean": true,
+  "secret_findings": [],
+  "status": "ok",
+  "duration_s": 0.0,
+  "bridge_version": "42b4d5043b2fd855"
+}

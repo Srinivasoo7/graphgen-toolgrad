@@ -1,0 +1,46 @@
+# Enterprise IT service desk: synthetic training data for a helpdesk copilot.
+# Domain: employee IT issues -> KB-grounded diagnosis -> verified ticket actions.
+name: enterprise-itsm
+
+mcp_servers:
+  - name: itsm
+    transport: stdio
+    command: /home/hatch/workspace/vendor/.venv_toolgrad/bin/python
+    args: ["/home/hatch/workspace/liverun-itsm-20260920/itsm_mcp_server.py"]
+    timeout_s: 60.0
+    retries: 1
+
+domain:
+  name: enterprise-it-support
+  kg_source: corpus
+  corpus_dir: /home/hatch/workspace/liverun-itsm-20260920/corpus
+  max_entities: 200
+
+generation:
+  num_chains: 6
+  apis_per_workflow: 5
+  seed: 7
+  min_samples: 1
+  max_llm_calls: 80
+
+llm:
+  backend: openrouter
+  model: google/gemini-2.5-flash-lite
+  api_key_env: OPENROUTER_API_KEY
+  max_tokens: 4096
+  max_retries: 4
+  backoff_s: 1.0
+  timeout_s: 120.0
+
+quality:
+  min_coverage: 0.5
+  require_chain_valid: true
+  require_entities: true
+  max_iterations: 3
+  pii_redact: true
+
+output:
+  dir: /home/hatch/workspace/liverun-itsm-20260920/runs/itsm
+  dataset_name: itsm-helpdesk-tool-use
+  version: 0.1.0
+  train_split: 0.8

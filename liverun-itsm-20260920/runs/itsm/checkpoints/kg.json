@@ -1,0 +1,10 @@
+{
+  "source": "corpus",
+  "num_nodes": 175,
+  "num_edges": 154,
+  "context_tokens_est": 1989,
+  "path": "/home/hatch/workspace/liverun-itsm-20260920/runs/itsm/kg_context.json",
+  "status": "ok",
+  "duration_s": 40.9,
+  "bridge_version": "42b4d5043b2fd855"
+}
