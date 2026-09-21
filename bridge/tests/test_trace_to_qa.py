@@ -140,3 +140,32 @@ def test_ground_entities_includes_step_tool_names():
         ],
     }
     assert trace_to_qa.ground_entities(chain, kg) == ["list_directory"]
+
+
+def test_prompt_frames_request_fulfilled_by_chain():
+    # Regression test: the 2026-09-20 ITSM run produced "What is the status
+    # of ticket INC-1042?" for a chain whose only step *creates* the ticket.
+    # The prompt must demand a request the chain fulfills, never a lookup
+    # about a record the chain creates.
+    op = trace_to_qa.TraceToQAOperator(kg_context=_kg_context())
+    chains = trace_to_qa.extract_chains(FABRICATED_SAMPLE)
+    prompt, _ = op.build_prompt(chains[0], _kg_context())
+    assert "fulfilled by executing the tool chain" in prompt
+    assert "Never ask about" in prompt
+    assert "already existed" in prompt
+
+
+def test_template_fallback_is_request_style():
+    # The keyless fallback must also read as a request, not a lookup.
+    op = trace_to_qa.TraceToQAOperator(kg_context=_kg_context())  # llm_fn=None
+    (qa,), _ = op.process([FABRICATED_SAMPLE])
+    assert qa["question"].startswith(
+        "Use the list_directory, read_text_file tools to list")
+    assert any(e in qa["question"] for e in qa["entity_refs"])
+
+
+def test_request_verb_mapping():
+    assert trace_to_qa._request_verb("create_ticket") == "create"
+    assert trace_to_qa._request_verb("get_kb_article") == "look up"
+    assert trace_to_qa._request_verb("update_ticket") == "update"
+    assert trace_to_qa._request_verb("frobnicate_widgets") == "use"

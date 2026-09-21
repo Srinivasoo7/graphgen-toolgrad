@@ -164,3 +164,60 @@ def test_stats():
     assert s["num_tools"] == 6
     assert s["num_edges"] == g.number_of_edges() > 0
     assert 0.0 < s["density"] < 1.0
+
+
+def test_generic_only_overlap_is_penalized():
+    # ticket_id -> article_id shares only the generic token "id": weak
+    # evidence, must not clear the default threshold.
+    score, _ = toolkg_builder.composability_score(
+        [("ticket_id", "string")], [("article_id", "string")])
+    assert score < toolkg_builder.DEFAULT_THRESHOLD
+    # ...while a specific shared token keeps the full score + type bonus.
+    score, pair = toolkg_builder.composability_score(
+        [("ticket_id", "string")], [("ticket_id", "string")])
+    assert score == 1.0
+    assert pair == ("ticket_id", "ticket_id")
+
+
+def test_generic_only_match_scores_half_dice():
+    # title -> title: Dice 1.0 halved to 0.5 — a weak but defensible edge,
+    # gone under a stricter threshold.
+    score, _ = toolkg_builder.composability_score(
+        [("title", "string")], [("title", "string")])
+    assert score == 0.5
+
+
+def _itsm_catalog():
+    return [
+        _fake_tool("search_kb", "Search the IT knowledge base.",
+                   {"query": {"type": "string"}}),
+        _fake_tool("get_kb_article",
+                   "Fetch the full text of a knowledge-base article by id.",
+                   {"article_id": {"type": "string"}}),
+        _fake_tool("create_ticket", "Open a service-desk ticket.",
+                   {"title": {"type": "string"},
+                    "description": {"type": "string"}}),
+        _fake_tool("get_ticket", "Fetch a ticket by id.",
+                   {"ticket_id": {"type": "string"}}),
+    ]
+
+
+_ITSM_HINTS = {
+    "search_kb": [("article_id", "string")],
+    "get_kb_article": [("article_id", "string")],
+    "create_ticket": [("ticket_id", "string")],
+    "get_ticket": [("ticket_id", "string")],
+}
+
+
+def test_itsm_hints_yield_composable_edges():
+    # Regression test for the 2026-09-20 ITSM run: without hints the
+    # description lexicon inferred nothing and the ToolKG had zero edges.
+    g = toolkg_builder.build_toolkg(_itsm_catalog(), output_hints=_ITSM_HINTS)
+    assert g.has_edge("search_kb", "get_kb_article")
+    assert g["search_kb"]["get_kb_article"]["via"] == "article_id->article_id"
+    assert g.has_edge("create_ticket", "get_ticket")
+    assert g["create_ticket"]["get_ticket"]["via"] == "ticket_id->ticket_id"
+    # ...and the bogus cross-id matches stay out.
+    assert not g.has_edge("create_ticket", "get_kb_article")
+    assert not g.has_edge("search_kb", "get_ticket")

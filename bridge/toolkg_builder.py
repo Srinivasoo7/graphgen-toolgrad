@@ -102,6 +102,17 @@ def name_similarity(a: Any, b: Any) -> float:
     return 2 * len(ta & tb) / (len(ta) + len(tb))
 
 
+# Tokens so generic they carry almost no composability evidence on their own.
+# A match counts as specific only when the shared tokens include something
+# else: ticket_id->ticket_id shares {"ticket", "id"} (specific via "ticket"),
+# while ticket_id->article_id shares only {"id"} (generic-only -> penalized).
+_GENERIC_TOKENS = frozenset({
+    "id", "ids", "title", "name", "names", "status", "state", "type", "kind",
+    "description", "desc", "info", "data", "value", "result", "results",
+    "item", "items", "list", "count", "total", "summary",
+})
+
+
 def composability_score(
     outputs: Sequence[Tuple[str, str]],
     inputs: Sequence[Tuple[str, str]],
@@ -109,18 +120,28 @@ def composability_score(
     """Best (output -> input) property match between two tools.
 
     Score = Dice name similarity + ``TYPE_BONUS`` when the types are
-    compatible, capped at 1.0. Returns ``(score, (out_name, in_name))``;
-    the pair is ``None`` when nothing matches.
+    compatible, capped at 1.0 — except when the shared tokens are all
+    generic (``"id"``, ``"title"``, ``"status"``, ...): that is weak
+    evidence of real composability, so the score is halved and the type
+    bonus is skipped. Returns ``(score, (out_name, in_name))``; the pair
+    is ``None`` when nothing matches.
     """
     best = 0.0
     best_pair: Optional[Tuple[str, str]] = None
     for out_prop in outputs:
         out_name, out_type = out_prop[0], out_prop[1]
+        ta = _tokens(out_name)
         for in_prop in inputs:
             # inputs may be (name, type) or (name, type, description)
             in_name, in_type = in_prop[0], in_prop[1]
-            s = name_similarity(out_name, in_name)
-            if s > 0 and _types_compatible(out_type, in_type):
+            tb = _tokens(in_name)
+            shared = ta & tb
+            if not shared:
+                continue
+            s = 2 * len(shared) / (len(ta) + len(tb))
+            if shared <= _GENERIC_TOKENS:
+                s *= 0.5
+            elif _types_compatible(out_type, in_type):
                 s = min(1.0, s + TYPE_BONUS)
             if s > best:
                 best, best_pair = s, (str(out_name), str(in_name))

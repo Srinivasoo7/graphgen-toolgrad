@@ -28,7 +28,7 @@ Input contracts (both from real ToolGrad code, no LLM needed):
 Output: one QA record per (chain, sample)::
 
     {
-      "question": str,          # names real KG entities; needs the chain
+      "question": str,          # user request; fulfilled by running the chain
       "answer_draft": str,      # drafted from tool results, not the response
       "required_tools": [str],  # tool names in chain order
       "chain": [                # normalized executed steps
@@ -55,9 +55,9 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from bridge.kg_context_exporter import render_kg_context
 
 _QA_PROMPT = """\
-You are writing a training question for a tool-using agent. The agent can
-only answer by executing the tool chain below; it cannot rely on general
-knowledge.
+You are writing a training example for a tool-using agent. The agent will
+see the user request below and must fulfill it by executing the tool chain
+shown; it cannot rely on general knowledge.
 
 Domain context (entities and relationships are REAL — use their exact names):
 {kg_context}
@@ -65,17 +65,40 @@ Domain context (entities and relationships are REAL — use their exact names):
 Executed tool chain:
 {chain_text}
 
-Write ONE question that:
+Write ONE user request that:
 1. names one or more of the real entities above (use exact names),
-2. can ONLY be answered by executing the tool chain (not from memory),
-3. has its answer contained in the tool results shown.
+2. can ONLY be fulfilled by executing the tool chain above — not from
+   memory, and not by calling a different tool or a different chain,
+3. asks the agent to DO what the chain does: a lookup chain answers a
+   question, a create/update chain carries out the change. Never ask about
+   a record as if it already existed when the chain is what creates it
+   (e.g. do not ask "what is the status of ticket X" for a chain whose
+   only step creates ticket X — ask to file the ticket instead),
+4. has its answer contained in the tool results shown.
 
 Output format, exactly:
-QUESTION: <the question>
+QUESTION: <the user request>
 ANSWER: <a draft answer citing the tool results>
 """
 
 _ANSWER_FALLBACK = "(drafted mechanically from tool results; LLM refinement pending)"
+
+
+# First-token verb of a snake_case tool name -> request-style verb for the
+# deterministic no-LLM fallback. Keeps the fallback's question a *request*
+# the chain fulfills, not a lookup about records the chain creates.
+_REQUEST_VERBS = {
+    "create": "create", "open": "open", "add": "add", "file": "file",
+    "get": "look up", "fetch": "fetch", "retrieve": "retrieve",
+    "search": "search", "find": "find", "list": "list", "lookup": "look up",
+    "update": "update", "modify": "modify", "set": "set", "append": "append",
+    "delete": "delete", "remove": "remove", "close": "close",
+}
+
+
+def _request_verb(tool_name: str) -> str:
+    """Map a tool name to the action verb for a request-style question."""
+    return _REQUEST_VERBS.get(str(tool_name).split("_")[0].lower(), "use")
 
 
 def _preview(result: Any, max_chars: int = 300) -> str:
@@ -193,9 +216,10 @@ def _template_generate(prompt_ctx: dict) -> Tuple[str, str]:
     tools = [s["tool"] for s in chain["steps"]]
     first = chain["steps"][0]
     anchor = ", ".join(entity_refs) if entity_refs else "the data"
+    tool_list = ", ".join(tools) + (" tools" if len(tools) > 1 else " tool")
     question = (
-        f"Using the {', '.join(tools)} tools in order, what do the local "
-        f"records say about {anchor}?"
+        f"Use the {tool_list} to {_request_verb(tools[0])} "
+        f"the following: {anchor}."
     )
     answer = (
         f"{_ANSWER_FALLBACK} "
@@ -208,6 +232,10 @@ def _template_generate(prompt_ctx: dict) -> Tuple[str, str]:
 
 class TraceToQAOperator:
     """GraphGen-style operator: ToolGrad traces -> tool-grounded QA pairs.
+
+    Emits one user request per executed chain: a request that names real KG
+    entities and is fulfillable **only** by running the recorded tool chain
+    (not from the model's parametric knowledge).
 
     ``process(samples)`` mirrors GraphGen operators' ``process(batch) ->
     (results, stats)`` contract. Each sample is a workflow-sample dict

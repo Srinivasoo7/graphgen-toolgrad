@@ -22,6 +22,19 @@ generation:
   seed: 7
   min_samples: 1
   max_llm_calls: 80
+  # ToolKG composability: MCP tools declare inputs but not outputs, so the
+  # builder cannot infer what feeds what. These hints name each tool's real
+  # output properties (verified against itsm_mcp_server.py); without them
+  # the ToolKG finds zero edges and the sampler degenerates to single-tool
+  # chains (see the 2026-09-20 ITSM run: 7 nodes, 0 edges, 1 trivial pair).
+  output_hints:
+    search_kb: [["article_id", "string"], ["title", "string"], ["category", "string"], ["snippet", "string"]]
+    get_kb_article: [["article_id", "string"], ["title", "string"], ["body", "string"]]
+    create_ticket: [["ticket_id", "string"], ["title", "string"], ["description", "string"], ["category", "string"], ["priority", "string"], ["status", "string"]]
+    get_ticket: [["ticket_id", "string"], ["title", "string"], ["status", "string"]]
+    update_ticket: [["ticket_id", "string"], ["status", "string"]]
+    list_open_tickets: [["ticket_id", "string"], ["title", "string"], ["status", "string"]]
+    lookup_asset: [["tag", "string"], ["model", "string"], ["assigned_to", "string"], ["status", "string"], ["location", "string"]]
 
 llm:
   backend: openrouter
