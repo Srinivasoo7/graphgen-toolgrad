@@ -134,7 +134,7 @@ def test_chain_toolkg_coverage():
              {"tool": "search_files"}]
     assert chain_verifier.chain_toolkg_coverage(steps, g) == 1.0
     assert chain_verifier.chain_toolkg_coverage(["list_directory", "search_files"], g) == 0.0
-    assert chain_verifier.chain_toolkg_coverage(["only_one"], g) == 1.0
+    assert chain_verifier.chain_toolkg_coverage(["only_one"], g) is None
     assert chain_verifier.chain_toolkg_coverage([], g) == 0.0
     assert chain_verifier.chain_toolkg_coverage(steps, None) == 0.0
 

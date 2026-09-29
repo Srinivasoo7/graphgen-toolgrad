@@ -1,5 +1,9 @@
 # graphgen-toolgrad
 
+> Private enterprise training-data factory. Converts small approved samples plus business context into expert-accepted, execution-verified training rows and QA fixtures. Does not replace source systems or fine-tune models.
+
+A successfully executed tool call is not a training row. A row is released only after the action matches the intent, the expected outcome holds, and an expert accepts it.
+
 A bridge between two synthetic-data projects, built on Sri's integration
 forks (branch `integrate/graphgen-toolgrad` on each):
 

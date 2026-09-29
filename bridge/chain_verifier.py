@@ -259,7 +259,7 @@ def verify_qa(qa: dict, executor) -> dict:
             record["ok"] = True
         executed_steps.append(record)
 
-    return _verify_report(missing_tools, schema_mismatches, executed_steps)
+    return _verify_report(missing_tools, schema_mismatches, executed_steps, qa)
 
 
 async def averify_qa(qa: dict, executor) -> dict:
@@ -301,37 +301,92 @@ async def averify_qa(qa: dict, executor) -> dict:
             record["ok"] = True
         executed_steps.append(record)
 
-    return _verify_report(missing_tools, schema_mismatches, executed_steps)
+    return _verify_report(missing_tools, schema_mismatches, executed_steps, qa)
 
 
-def _verify_report(missing_tools, schema_mismatches, executed_steps) -> dict:
-    chain_valid = (
+def _business_checks(qa: dict, execution_completed: bool) -> dict:
+    """Separate 'the call ran' from 'the business result is confirmed'.
+
+    ``output_assertions_passed`` and ``state_assertions_passed`` stay false
+    until the candidate declares expected outcomes. A crash-free call does
+    not fill them in.
+    """
+    from bridge.verification.intent import intent_aligned, tool_names_of
+
+    chain = qa.get("chain") or []
+    aligned = intent_aligned(qa.get("question") or "", tool_names_of(chain))
+    expected = [o for o in (qa.get("expected_outcomes") or []) if isinstance(o, dict)]
+    previews = " ".join(
+        str(step.get("result_preview", "")) for step in chain if isinstance(step, dict)
+    )
+    if not expected:
+        output_ok = False
+        state_ok = False
+    else:
+        output_ok = all(
+            (item.get("assertion") or item.get("description") or "") in previews
+            for item in expected
+        )
+        stated = [item for item in expected if "state_after" in item]
+        state_ok = bool(stated) and all(item.get("state_after") for item in stated)
+    answer = qa.get("answer_draft") or ""
+    snippets = [
+        str(step.get("result_preview", ""))[:80]
+        for step in chain
+        if isinstance(step, dict) and step.get("result_preview")
+    ]
+    faithful = bool(answer) and any(snippet and snippet in answer for snippet in snippets)
+    policy_ok = not (qa.get("policy_ids") or [])
+    safe = bool(
+        execution_completed
+        and aligned
+        and output_ok
+        and state_ok
+        and policy_ok
+        and faithful
+    )
+    return {
+        "intent_aligned": aligned,
+        "output_assertions_passed": output_ok,
+        "state_assertions_passed": state_ok,
+        "policy_checks_passed": policy_ok,
+        "answer_faithful": faithful,
+        "safe_to_review": safe,
+    }
+
+
+def _verify_report(missing_tools, schema_mismatches, executed_steps, qa=None) -> dict:
+    execution_completed = (
         not missing_tools
         and not schema_mismatches
         and all(s["ok"] for s in executed_steps)
         and bool(executed_steps)
     )
-    return {
-        "chain_valid": chain_valid,
+    report = {
+        # chain_valid remains the execution fact. It is not outcome confirmation.
+        "chain_valid": execution_completed,
+        "execution_completed": execution_completed,
         "missing_tools": missing_tools,
         "schema_mismatches": schema_mismatches,
         "executed_steps": executed_steps,
     }
+    report.update(_business_checks(qa or {}, execution_completed))
+    return report
 
 
-def chain_toolkg_coverage(chain: Sequence[dict], toolkg) -> float:
+def chain_toolkg_coverage(chain: Sequence[dict], toolkg):
     """Fraction of consecutive tool pairs in ``chain`` that are ToolKG edges.
 
     ``chain`` may be QA ``"chain"`` step dicts (``{"tool": ...}``) or bare
-    tool-name strings. A single-step chain is vacuously composable and
-    scores 1.0; an empty chain, or a missing ToolKG, scores 0.0.
+    tool-name strings.     A single-step chain has no pair to score and returns None. An empty
+    chain, or a missing ToolKG, scores 0.0.
     """
     names = [s.get("tool") if isinstance(s, dict) else s for s in chain]
     names = [n for n in names if n]
     if not names:
         return 0.0
     if len(names) == 1:
-        return 1.0
+        return None
     if toolkg is None:
         return 0.0
     hits = sum(1 for a, b in zip(names, names[1:]) if toolkg.has_edge(a, b))

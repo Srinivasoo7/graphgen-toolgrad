@@ -153,7 +153,10 @@ def passes_thresholds(score: Dict[str, Any], config: RefineConfig) -> bool:
     """True iff a scored QA pair clears every configured quality gate."""
     if config.require_chain_valid and not score["chain_valid"]:
         return False
-    if score["coverage"] < config.min_coverage:
+    verification = score.get("verification") or {}
+    if verification.get("intent_aligned") is False:
+        return False
+    if score["coverage"] is not None and score["coverage"] < config.min_coverage:
         return False
     if config.require_entities and not score["entity_grounded"]:
         return False

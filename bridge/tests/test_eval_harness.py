@@ -44,8 +44,10 @@ def test_evaluate_known_dataset():
     assert m["n"] == 3
     assert m["fraction_chain_verified"] == 2 / 3
     assert m["entity_grounding_rate"] == 2 / 3
-    # list_directory -> read_text_file is a ToolKG edge; single-step chain -> 1.0
-    assert m["mean_toolkg_coverage"] == (1.0 + 0.0 + 1.0) / 3
+    # list_directory -> read_text_file is a ToolKG edge. The single-step
+    # chain is not applicable and is left out of the mean.
+    assert m["mean_toolkg_coverage"] == (1.0 + 0.0) / 2
+    assert m["toolkg_coverage_not_applicable"] == 1
     div = m["tool_diversity"]
     assert div["distinct_tools"] == 3  # list_directory, read_text_file, nope_tool
     assert div["total_steps"] == 5

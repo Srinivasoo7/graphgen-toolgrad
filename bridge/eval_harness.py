@@ -113,7 +113,9 @@ def evaluate(
         chain_verifier.chain_toolkg_coverage(qa.get("chain", []), toolkg)
         for qa in pairs
     ] if toolkg is not None else []
-    metrics["mean_toolkg_coverage"] = mean(coverages) if coverages else None
+    scored = [c for c in coverages if c is not None]
+    metrics["mean_toolkg_coverage"] = mean(scored) if scored else None
+    metrics["toolkg_coverage_not_applicable"] = sum(1 for c in coverages if c is None)
     if toolkg is None:
         metrics["coverage_note"] = "no ToolKG supplied; coverage not measured"
 
