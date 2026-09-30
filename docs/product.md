@@ -96,7 +96,23 @@ relations:
   - {head: Claim, relation: filed_under, tail: Policy}
 ```
 
-### 4. Semantic quality gate (Jev second-stage filter)
+### 4. Data-rich domain (measured from tables, TabPFN probe)
+
+When the business context lives in databases rather than documents,
+point the factory at CSV/JSON table samples. A TabPFN probe measures
+which columns predict which outcomes; those findings ground the KG
+(structural graph + optional LLM narration), per
+`docs/adr-tabpfn-tabular-input.md`. Requires the `tabpfn` package.
+
+```yaml
+domain:
+  name: support
+  kg_source: tables
+  tables_dir: ./data/support
+  table_targets: {tickets: status}   # optional: table -> outcome column
+```
+
+### 5. Semantic quality gate (Jev second-stage filter)
 
 Heuristic gates (chain-valid, entity-grounded, ToolKG coverage) run first;
 Jev judges semantic answer quality on the survivors.

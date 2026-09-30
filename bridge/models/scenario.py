@@ -64,6 +64,7 @@ class ToolAction:
 class ExpectedOutcome:
     description: str
     assertion: str = ""
+    state_after: str = ""
 
     def as_dict(self) -> dict:
         return _dump(self)

@@ -211,6 +211,9 @@ class FactoryRun:
             corpus_dir=domain.corpus_dir,
             spec=spec,
             llm_fn=llm_fn,
+            tables_dir=domain.tables_dir,
+            table_targets=domain.table_targets,
+            tables_work_dir=os.path.join(self.workdir, "tables_corpus"),
         )
         context = kg_context_exporter.export_kg_context(graph)
         kg_text = kg_context_exporter.render_kg_context(context)

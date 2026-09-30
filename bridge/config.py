@@ -16,7 +16,7 @@ Example::
         timeout_s: 30.0
     domain:
       name: crm
-      kg_source: corpus            # tools | corpus | spec
+      kg_source: corpus            # tools | corpus | spec | tables
       corpus_dir: ./docs/crm
     generation:
       num_chains: 25
@@ -60,9 +60,11 @@ class MCPServerConfig:
 @dataclass
 class DomainConfig:
     name: str = "default"
-    kg_source: str = "tools"  # tools | corpus | spec
+    kg_source: str = "tools"  # tools | corpus | spec | tables
     corpus_dir: str = ""  # kg_source == "corpus"
     spec_file: str = ""  # kg_source == "spec"
+    tables_dir: str = ""  # kg_source == "tables": CSV/JSON data tables
+    table_targets: Dict[str, str] = field(default_factory=dict)  # table -> target column
     max_entities: int = 200
 
 
@@ -194,6 +196,11 @@ def from_dict(raw: dict) -> RunConfig:
             kg_source=str(domain.get("kg_source", "tools")),
             corpus_dir=str(domain.get("corpus_dir", "")),
             spec_file=str(domain.get("spec_file", "")),
+            tables_dir=str(domain.get("tables_dir", "")),
+            table_targets={
+                str(k): str(v)
+                for k, v in (domain.get("table_targets", {}) or {}).items()
+            },
             max_entities=_int(domain, "max_entities", 200),
         ),
         generation=GenerationConfig(
@@ -266,12 +273,14 @@ def validate_config(cfg: RunConfig) -> List[str]:
         if s.retries < 0:
             problems.append(f"{tag}: retries must be >= 0")
     d = cfg.domain
-    if d.kg_source not in ("tools", "corpus", "spec"):
-        problems.append("domain.kg_source must be 'tools', 'corpus', or 'spec'")
+    if d.kg_source not in ("tools", "corpus", "spec", "tables"):
+        problems.append("domain.kg_source must be 'tools', 'corpus', 'spec', or 'tables'")
     if d.kg_source == "corpus" and not d.corpus_dir:
         problems.append("domain.corpus_dir is required when kg_source='corpus'")
     if d.kg_source == "spec" and not d.spec_file:
         problems.append("domain.spec_file is required when kg_source='spec'")
+    if d.kg_source == "tables" and not d.tables_dir:
+        problems.append("domain.tables_dir is required when kg_source='tables'")
     if d.max_entities < 1:
         problems.append("domain.max_entities must be >= 1")
     g = cfg.generation
@@ -360,8 +369,12 @@ domain:
   #   tools  — from MCP tool schemas alone (no LLM, no docs needed)
   #   corpus — LLM-extracted from markdown/text docs in corpus_dir
   #   spec   — explicit entities/relations YAML (see docs/product.md)
+  #   tables — TabPFN probe over CSV/JSON data tables in tables_dir
+  #            (needs the tabpfn package; see docs/adr-tabpfn-tabular-input.md)
   kg_source: tools
   corpus_dir: ./docs/{name}
+  tables_dir: ./data/{name}
+  # table_targets: {{tickets: status}}   # optional: table -> outcome column
   max_entities: 200
 
 generation:

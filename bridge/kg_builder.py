@@ -1,6 +1,6 @@
 """Build the domain knowledge graph for any use case.
 
-The factory grounds generation in a knowledge graph. Three ways to get one,
+The factory grounds generation in a knowledge graph. Four ways to get one,
 chosen by ``domain.kg_source`` in the run config:
 
 - ``tools`` — derived from MCP tool schemas alone. No LLM, no docs, no
@@ -14,6 +14,13 @@ chosen by ``domain.kg_source`` in the run config:
 - ``spec`` — an explicit YAML hand-authored by the enterprise:
   ``{entities: [{name, type, description}], relations: [{head, relation,
   tail, description}]}``. Full control, zero inference.
+- ``tables`` — measured from the enterprise's own data tables (CSV / JSON
+  in ``tables_dir``) by the TabPFN probe stage
+  (:mod:`bridge.tabpfn_probe`; see ``docs/adr-tabpfn-tabular-input.md``).
+  A structural graph (tables, columns, measured ``predicts`` relations)
+  is derived from the probe findings; when an LLM is available the
+  findings are also narrated into documents and mined via the corpus
+  path, and the two graphs are merged.
 
 All three produce a :mod:`networkx` graph using GraphGen's
 ``light_rag_kg_builder`` attribute schema (``entity_name`` /
@@ -297,6 +304,90 @@ def build_kg_from_corpus(
 
 
 # ---------------------------------------------------------------------------
+# tables source: TabPFN probe findings over enterprise data tables
+# ---------------------------------------------------------------------------
+
+
+def build_kg_from_tables(
+    tables_dir: str,
+    llm_fn=None,
+    probe_factory=None,
+    table_targets: Optional[Dict[str, str]] = None,
+    work_dir: str = "",
+    max_entities: int = 200,
+) -> nx.Graph:
+    """Build a KG from enterprise data tables via the TabPFN probe stage.
+
+    Structural graph first (tables, columns, measured ``predicts``
+    relations, straight from the findings — no LLM needed); when ``llm_fn``
+    is available, the findings are narrated into a corpus directory and
+    mined with the corpus extractor, and that graph is merged in.
+    """
+    from bridge import tabpfn_probe
+
+    if not os.path.isdir(tables_dir):
+        raise KGBuildError(f"tables_dir not found: {tables_dir}")
+    tables = tabpfn_probe.load_tables_dir(tables_dir)
+    if not tables:
+        raise KGBuildError(f"no .csv/.json tables in {tables_dir}")
+    findings = tabpfn_probe.probe_tables(
+        tables, targets_by_table=table_targets, probe_factory=probe_factory
+    )
+    g = nx.Graph()
+    for tf in findings["tables"]:
+        tkey = _add_entity(
+            g, tf["table"], "table",
+            f"Enterprise data table with {tf['num_rows']} rows",
+        )
+        for col in tf["columns"]:
+            desc = (
+                f"Column of {tf['table']}: {col['type']}, "
+                f"{col['cardinality']} distinct values"
+            )
+            ckey = _add_entity(g, f"{tf['table']}.{col['name']}", "column", desc)
+            _add_relation(g, tkey, "has_column", ckey, desc)
+        for tgt in tf["targets"]:
+            metric = "accuracy" if tgt["task"] == "classification" else "R2"
+            for imp in tgt["importances"][:5]:
+                if imp["importance"] <= 0:
+                    continue
+                _add_relation(
+                    g,
+                    f"{tf['table']}.{imp['feature']}",
+                    "predicts",
+                    f"{tf['table']}.{tgt['column']}",
+                    f"{imp['feature']} predicts {tgt['column']} "
+                    f"(permutation importance {imp['importance']}, "
+                    f"holdout {metric} {tgt['holdout_score']} vs "
+                    f"baseline {tgt['baseline_score']})",
+                )
+    if work_dir:
+        corpus_dir = work_dir
+    else:
+        import tempfile
+
+        corpus_dir = tempfile.mkdtemp(prefix="tables_corpus_")
+    tabpfn_probe.write_tables_corpus(findings, corpus_dir, llm_fn=llm_fn)
+    if llm_fn is not None:
+        extracted = build_kg_from_corpus(
+            corpus_dir, llm_fn, max_entities=max_entities
+        )
+        for node, attrs in extracted.nodes(data=True):
+            _add_entity(
+                g,
+                str(node),
+                str(attrs.get("entity_type", "concept")),
+                str(attrs.get("description", "")),
+            )
+        for head, tail, attrs in extracted.edges(data=True):
+            _add_relation(
+                g, str(head), str(attrs.get("relation", "related_to")),
+                str(tail), str(attrs.get("description", "")),
+            )
+    return _cap_entities(g, max_entities)
+
+
+# ---------------------------------------------------------------------------
 # dispatcher
 # ---------------------------------------------------------------------------
 
@@ -310,6 +401,10 @@ def build_kg(
     spec_file: str = "",
     llm_fn=None,
     max_entities: int = 200,
+    tables_dir: str = "",
+    probe_factory=None,
+    table_targets: Optional[Dict[str, str]] = None,
+    tables_work_dir: str = "",
 ) -> nx.Graph:
     """Build the domain KG from the configured source."""
     if source == "tools":
@@ -326,5 +421,16 @@ def build_kg(
             raise KGBuildError("kg_source='corpus' needs corpus_dir")
         return build_kg_from_corpus(
             corpus_dir, llm_fn, max_entities=max_entities
+        )
+    if source == "tables":
+        if not tables_dir:
+            raise KGBuildError("kg_source='tables' needs tables_dir")
+        return build_kg_from_tables(
+            tables_dir,
+            llm_fn=llm_fn,
+            probe_factory=probe_factory,
+            table_targets=table_targets,
+            work_dir=tables_work_dir,
+            max_entities=max_entities,
         )
     raise KGBuildError(f"unknown kg_source: {source!r}")

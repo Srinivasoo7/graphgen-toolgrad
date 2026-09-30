@@ -3,6 +3,36 @@
 **Status:** Proposed, 2026-09-30. Decision owner: Sri.
 **Question:** where, if anywhere, does TabPFN sit in the factory pipeline?
 
+## Addendum (2026-09-30): verification results and implementation status
+
+Verified before building:
+
+- Package: `pip install tabpfn`; sklearn-style `TabPFNClassifier` /
+  `TabPFNRegressor` API.
+- Limits are checkpoint-dependent: v2 ≈ 10k rows × 500 features per
+  in-context pass; 2.5 reaches 50k × 2,000; TabPFN-3 up to 1M × 200.
+  Production tables need sampling regardless — the probe samples
+  deterministically (`max_rows`, seeded).
+- License: code and v2 weights sit under the Prior Labs License
+  (Apache 2.0 + attribution). **2.5 / 3 weights are non-commercial** and
+  current package defaults may select them. Commercial deployments must
+  pin a v2 checkpoint (`model_path`) or hold a Prior Labs enterprise
+  license. This is a launch checklist item, not a footnote.
+
+Implemented (this repo, same day, at Sri's go-ahead):
+
+- `bridge/tabpfn_probe.py` — probe stage (lazy TabPFN import, stub-
+  factory seam for keyless tests), findings → corpus documents, and
+  `tstr_parity` for the synthetic-data quality gate.
+- `domain.kg_source: tables` — config, validation, runner wiring, and the
+  KG builder's structural + LLM-merged graph.
+- Generator-side `expected_outcomes` (sequencing item 1): derived from
+  executed results in `trace_to_qa`, so `safe_to_review` is reachable;
+  covered by a verifier integration test and the golden regression.
+- Not yet run: a live TabPFN probe against real tables (needs the
+  package installed + a checkpoint choice), and the post-fix ITSM
+  re-run (sequencing item 2).
+
 ## Context
 
 The product thesis (whiteboard, 2026-09-30) is two failure loops:

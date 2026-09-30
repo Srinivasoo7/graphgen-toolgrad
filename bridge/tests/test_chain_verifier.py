@@ -364,3 +364,40 @@ def test_executor_acall_uses_timeout_without_loop_runner():
         return "no-timeout"
 
     assert asyncio.run(main()) == "timed-out"
+
+
+
+def test_safe_to_review_reachable_with_derived_outcomes():
+    """The generator half of 457aa5f: outcomes derived from the executed
+    results satisfy the business checks, so an honest row can be
+    safe_to_review (previously unreachable — nothing emitted outcomes)."""
+    from bridge.trace_to_qa import derive_expected_outcomes
+
+    ex = MockToolExecutor()
+    ex.register(
+        "create_ticket",
+        {"type": "object",
+         "properties": {"title": {"type": "string"}},
+         "required": ["title"]},
+        lambda ti: {"id": "INC-1042", "status": "New"},
+    )
+    steps = [{
+        "tool": "create_ticket",
+        "tool_input": {"title": "VPN outage"},
+        "result_preview": '{"id": "INC-1042", "status": "New"}',
+    }]
+    qa = {
+        "question": "Create a ticket for the VPN outage",
+        "answer_draft": 'Created: {"id": "INC-1042", "status": "New"}',
+        "required_tools": ["create_ticket"],
+        "chain": steps,
+        "entity_refs": [],
+        "expected_outcomes": derive_expected_outcomes(steps),
+        "provenance": {},
+    }
+    report = chain_verifier.verify_qa(qa, ex)
+    assert report["intent_aligned"] is True
+    assert report["output_assertions_passed"] is True
+    assert report["state_assertions_passed"] is True
+    assert report["answer_faithful"] is True
+    assert report["safe_to_review"] is True

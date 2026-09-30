@@ -51,7 +51,12 @@ def test_operator_process_emits_grounded_qa():
     assert len(results) == 1
     qa = results[0]
     assert set(qa) == {"question", "answer_draft", "required_tools",
-                       "chain", "entity_refs", "provenance"}
+                       "chain", "entity_refs", "expected_outcomes", "provenance"}
+    # expected outcomes are derived from the executed results
+    assert qa["expected_outcomes"]
+    previews = " ".join(s["result_preview"] for s in qa["chain"])
+    for outcome in qa["expected_outcomes"]:
+        assert outcome["assertion"] in previews
     # question names real KG entities
     assert any(e in qa["question"] for e in qa["entity_refs"])
     assert qa["entity_refs"], "question must be anchored to at least one KG entity"
@@ -169,3 +174,40 @@ def test_request_verb_mapping():
     assert trace_to_qa._request_verb("get_kb_article") == "look up"
     assert trace_to_qa._request_verb("update_ticket") == "update"
     assert trace_to_qa._request_verb("frobnicate_widgets") == "use"
+
+
+# ---------------------------------------------------------------------------
+# expected outcomes: the generator side of the release gate (457aa5f review)
+# ---------------------------------------------------------------------------
+
+
+def test_derive_expected_outcomes_from_json_results():
+    steps = [
+        {"tool": "create_ticket", "tool_input": {"title": "VPN down"},
+         "result_preview": '{"id": "INC-1042", "status": "New"}'},
+        {"tool": "get_ticket", "tool_input": {"id": "INC-1042"},
+         "result_preview": '{"status": "In Progress", "priority": "High"}'},
+    ]
+    outcomes = trace_to_qa.derive_expected_outcomes(steps)
+    assert len(outcomes) == 2
+    # salient key order prefers status; the assertion must be checkable
+    # against the step's own result preview
+    assert outcomes[0]["assertion"] == "New"
+    assert outcomes[0]["assertion"] in steps[0]["result_preview"]
+    assert "create_ticket" in outcomes[0]["description"]
+    # mutating tool records the applied state; a read records observed state
+    assert outcomes[0]["state_after"].startswith("create_ticket applied:")
+    assert outcomes[1]["state_after"].startswith("get_ticket observed:")
+
+
+def test_derive_expected_outcomes_fallback_for_unstructured_results():
+    steps = [{"tool": "ping_host", "tool_input": {},
+              "result_preview": "reply from 10.0.0.1: time=3ms"}]
+    outcomes = trace_to_qa.derive_expected_outcomes(steps)
+    assert outcomes[0]["assertion"] in steps[0]["result_preview"]
+    # a pure read with no parseable fact states no post-state
+    assert "state_after" not in outcomes[0]
+
+
+def test_derive_expected_outcomes_empty_chain():
+    assert trace_to_qa.derive_expected_outcomes([]) == []

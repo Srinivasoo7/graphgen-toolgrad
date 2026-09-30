@@ -34,6 +34,10 @@ Output: one QA record per (chain, sample)::
       "chain": [                # normalized executed steps
         {"tool": str, "tool_input": dict, "result_preview": str}],
       "entity_refs": [str],     # KG entities the question is anchored to
+      "expected_outcomes": [    # derived from the executed results (see
+        {"description": str,    #   derive_expected_outcomes): what the chain
+         "assertion": str,      #   demonstrably produced, so the verifier's
+         "state_after": str}],  #   business checks have something to check
       "provenance": {
         "source": "toolgrad_trace",
         "chain_id": str,
@@ -99,6 +103,83 @@ _REQUEST_VERBS = {
 def _request_verb(tool_name: str) -> str:
     """Map a tool name to the action verb for a request-style question."""
     return _REQUEST_VERBS.get(str(tool_name).split("_")[0].lower(), "use")
+
+
+# First-token verbs whose execution changes world state (vs pure reads).
+_MUTATING_TOKENS = {
+    "create", "open", "add", "file", "update", "modify", "set", "append",
+    "delete", "remove", "close", "assign", "escalate", "approve", "reject",
+    "resolve", "submit", "cancel",
+}
+
+# Result fields preferred when deriving a salient fact from a step result.
+_SALIENT_KEYS = (
+    "status", "state", "id", "name", "title", "number", "key",
+    "result", "count", "priority", "severity",
+)
+
+
+def _salient_fact(result_preview: str) -> Optional[Tuple[str, str]]:
+    """Extract one (key, value) scalar fact from a JSON result preview.
+
+    Searches the top-level object, then one level of nested objects, for a
+    salient key first and any scalar field second. Returns None when the
+    preview is not a JSON object with a usable scalar (e.g. truncated).
+    """
+    try:
+        parsed = json.loads(result_preview)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    objects = [parsed] + [v for v in parsed.values() if isinstance(v, dict)]
+    for obj in objects:
+        for key in _SALIENT_KEYS:
+            val = obj.get(key)
+            if isinstance(val, (str, int)) and len(str(val).strip()) >= 2:
+                return key, str(val)
+        for key, val in obj.items():
+            if isinstance(val, (str, int)) and len(str(val).strip()) >= 2:
+                return str(key), str(val)
+    return None
+
+
+def derive_expected_outcomes(steps: Sequence[dict]) -> List[dict]:
+    """Derive expected outcomes from what a chain actually produced.
+
+    The release gate (``bridge.chain_verifier``) checks declared outcomes
+    against the executed results; a generator that declares nothing leaves
+    ``safe_to_review`` unreachable. Every outcome here is grounded in the
+    recorded execution — never invented:
+
+    - ``assertion`` is a salient value taken from the step's own result
+      (or, when the result has no parseable scalar, a slice of the result
+      preview itself), so it is checkable against the result previews.
+    - ``description`` states the fact in words.
+    - ``state_after`` records the post-chain state the execution evidences:
+      the applied change for mutating tools, the observed state for reads.
+    """
+    outcomes: List[dict] = []
+    for step in steps:
+        tool = str(step.get("tool", ""))
+        preview = str(step.get("result_preview", ""))
+        fact = _salient_fact(preview)
+        if fact:
+            key, value = fact
+            assertion = value
+            description = f"{tool} result reports {key}={value}"
+        else:
+            assertion = preview[:60].strip()
+            description = f"{tool} completed with the recorded result"
+        outcome: Dict[str, Any] = {"description": description, "assertion": assertion}
+        token = tool.split("_")[0].lower() if tool else ""
+        if fact:
+            verb = "applied" if token in _MUTATING_TOKENS else "observed"
+            outcome["state_after"] = f"{tool} {verb}: {fact[0]}={fact[1]}"
+        elif token in _MUTATING_TOKENS:
+            outcome["state_after"] = f"{tool} applied"
+        outcomes.append(outcome)
+    return outcomes
 
 
 def _preview(result: Any, max_chars: int = 300) -> str:
@@ -318,6 +399,7 @@ class TraceToQAOperator:
             "required_tools": required_tools,
             "chain": chain["steps"],
             "entity_refs": prompt_ctx["entity_refs"],
+            "expected_outcomes": derive_expected_outcomes(chain["steps"]),
             "provenance": {
                 "source": "toolgrad_trace",
                 "chain_id": chain["chain_id"],
