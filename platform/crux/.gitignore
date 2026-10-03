@@ -1,0 +1,15 @@
+.env
+data/utopia/*
+!data/utopia/.gitkeep
+data/crux/*
+!data/crux/.gitkeep
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.ecc-agent-data/
+dist/
+build/
+.cursor/ecc-install-state.json

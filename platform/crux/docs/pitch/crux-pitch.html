@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crux — What, Why, How</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #f6f4ef;
+      --bg-secondary: #ffffff;
+      --ink: #111111;
+      --muted: #4a4a4a;
+      --accent: #d61f1f;
+      --grid: rgba(17, 17, 17, 0.08);
+      --font-display: "Archivo", sans-serif;
+      --font-body: "Nunito", sans-serif;
+      --title-size: clamp(1.5rem, 5vw, 4rem);
+      --h2-size: clamp(1.25rem, 3.5vw, 2.5rem);
+      --h3-size: clamp(1rem, 2.5vw, 1.75rem);
+      --body-size: clamp(0.75rem, 1.5vw, 1.125rem);
+      --small-size: clamp(0.65rem, 1vw, 0.875rem);
+      --slide-padding: clamp(1rem, 4vw, 4rem);
+      --content-gap: clamp(0.5rem, 2vw, 2rem);
+      --element-gap: clamp(0.25rem, 1vw, 1rem);
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --duration-normal: 0.55s;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow-x: hidden; }
+    html { scroll-snap-type: y mandatory; scroll-behavior: smooth; }
+    body {
+      background: var(--bg-primary);
+      color: var(--ink);
+      font-family: var(--font-body);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+    .slide {
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      scroll-snap-align: start;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .slide-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-height: 100%;
+      overflow: hidden;
+      padding: var(--slide-padding);
+      max-width: min(92vw, 1100px);
+      margin: 0 auto;
+      width: 100%;
+      gap: var(--content-gap);
+    }
+    .q {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: var(--small-size);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1, h2 {
+      font-family: var(--font-display);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 0.95;
+    }
+    h1 { font-size: var(--title-size); max-width: 16ch; }
+    h2 { font-size: var(--h2-size); max-width: 22ch; }
+    p, li { font-size: var(--body-size); color: var(--muted); line-height: 1.35; }
+    .lede { font-size: var(--h3-size); color: var(--ink); max-width: 36ch; }
+    ul { list-style: none; display: flex; flex-direction: column; gap: clamp(0.35rem, 1vh, 0.85rem); }
+    li::before { content: ""; }
+    .num {
+      font-family: var(--font-display);
+      font-weight: 800;
+      color: var(--accent);
+      font-size: clamp(2.5rem, 8vw, 6rem);
+      line-height: 0.8;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+      gap: clamp(0.5rem, 1.5vw, 1rem);
+    }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--ink);
+      padding: clamp(0.7rem, 1.5vw, 1.2rem);
+      max-height: min(40vh, 320px);
+    }
+    .card h3 { font-family: var(--font-display); font-size: var(--h3-size); margin-bottom: 0.35rem; }
+    .formula {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: clamp(0.85rem, 2vw, 1.35rem);
+      color: var(--ink);
+      border-left: 4px solid var(--accent);
+      padding-left: 0.8rem;
+    }
+    .note { font-size: var(--small-size); color: var(--muted); }
+    .progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px; width: 0;
+      background: var(--accent); z-index: 20;
+    }
+    .nav-dots {
+      position: fixed; right: clamp(0.6rem, 2vw, 1.4rem); top: 50%;
+      transform: translateY(-50%); display: flex; flex-direction: column; gap: 0.45rem; z-index: 20;
+    }
+    .nav-dots button {
+      width: 8px; height: 8px; border-radius: 0; border: 1px solid var(--ink);
+      background: transparent; padding: 0; cursor: pointer;
+    }
+    .nav-dots button[aria-current="true"] { background: var(--accent); border-color: var(--accent); }
+    .keyboard-hint {
+      position: fixed; bottom: 0.8rem; left: var(--slide-padding);
+      font-size: var(--small-size); color: var(--muted); z-index: 20;
+    }
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity var(--duration-normal) var(--ease-out-expo), transform var(--duration-normal) var(--ease-out-expo); }
+    .slide.visible .reveal { opacity: 1; transform: none; }
+    .slide.visible .reveal:nth-child(2) { transition-delay: 0.08s; }
+    .slide.visible .reveal:nth-child(3) { transition-delay: 0.16s; }
+    .slide.visible .reveal:nth-child(4) { transition-delay: 0.24s; }
+    @media (max-height: 700px) {
+      :root { --slide-padding: clamp(0.75rem, 3vw, 2rem); --title-size: clamp(1.25rem, 4.5vw, 2.5rem); --h2-size: clamp(1rem, 3vw, 1.75rem); }
+    }
+    @media (max-height: 600px) {
+      :root { --slide-padding: clamp(0.5rem, 2.5vw, 1.5rem); --body-size: clamp(0.7rem, 1.2vw, 0.95rem); }
+      .nav-dots, .keyboard-hint, .decorative { display: none; }
+    }
+    @media (max-height: 500px) {
+      :root { --title-size: clamp(1rem, 3.5vw, 1.5rem); --h2-size: clamp(0.9rem, 2.5vw, 1.25rem); --body-size: clamp(0.65rem, 1vw, 0.85rem); }
+    }
+    @media (max-width: 600px) {
+      h1 { max-width: 12ch; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+      html { scroll-behavior: auto; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress-bar" aria-hidden="true"></div>
+  <nav class="nav-dots" aria-label="Slides"></nav>
+  <p class="keyboard-hint">Arrow keys · space · swipe</p>
+
+  <section class="slide" aria-label="Title">
+    <div class="slide-content">
+      <p class="q reveal">Product pitch</p>
+      <h1 class="reveal">Crux</h1>
+      <p class="lede reveal">After the loop is built, the question is who may know — and what you send the model.</p>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="What">
+    <div class="slide-content">
+      <p class="q reveal">What?</p>
+      <h2 class="reveal">Not another coding extension.</h2>
+      <p class="reveal">Crux is the product that sits after harness engineering: enterprise knowledge with an authority, then compression only on what that authority already allowed.</p>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Two modules">
+    <div class="slide-content">
+      <p class="q reveal">What?</p>
+      <h2 class="reveal">Two modules. One decision order.</h2>
+      <div class="grid-2">
+        <article class="card reveal">
+          <h3>Enterprise Ontology</h3>
+          <p>Utopia. Who may read or propose. Two restricted bases. Review is not a live edge.</p>
+        </article>
+        <article class="card reveal">
+          <h3>Token Optimization</h3>
+          <p>Headroom. Compress after authorize. Unpublished. Not a knowledge store.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Why">
+    <div class="slide-content">
+      <p class="q reveal">Why?</p>
+      <h2 class="reveal">The expensive failure is a wrong prediction that already used tools.</h2>
+      <ul class="reveal">
+        <li>The agent searched a KB, called a tool, then acted on the wrong fact.</li>
+        <li>A staging bot that sees Production is a governance failure, not a prompt failure.</li>
+        <li>More files in context do not decide who was allowed to know.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Dollar model">
+    <div class="slide-content">
+      <p class="q reveal">Why? · $</p>
+      <h2 class="reveal">Price the wrong action first. Tokens second.</h2>
+      <p class="formula reveal">wrong_action ≈ incidents × (rework + compliance + blast radius)</p>
+      <p class="formula reveal">token_bill ≈ tokens × calls × price</p>
+      <p class="note reveal">A model you fill with your numbers — not a Crux revenue claim. Token savings are a hypothesis. Compressing unauthorized text is worthless.</p>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Coding tools">
+    <div class="slide-content">
+      <p class="q reveal">Why? · market</p>
+      <h2 class="reveal">Coding tools buy more context.</h2>
+      <div class="grid-2">
+        <article class="card reveal"><h3>Cody</h3><p>Enterprise windows up to ~150k. Sourcegraph notes cost scales with tokens.</p></article>
+        <article class="card reveal"><h3>Continue</h3><p>Rules, MCP, docs into the IDE agent. Config limits, not a knowledge authority.</p></article>
+        <article class="card reveal"><h3>Aider</h3><p>Repo-map token budget so the codebase fits. Isolation is a user problem.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Glean">
+    <div class="slide-content">
+      <p class="q reveal">Why? · Glean</p>
+      <h2 class="reveal">Search ACLs are not this agent port.</h2>
+      <p class="reveal">Glean mirrors source permissions for search and MCP. Different job: connectors and workplace retrieval.</p>
+      <p class="reveal">Crux’s wedge: ontology-governed bases for workflow agents, propose off the live graph, redacted instrumented audit, then compress.</p>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="How">
+    <div class="slide-content">
+      <p class="q reveal">How?</p>
+      <h2 class="reveal">Authorize. Then compress.</h2>
+      <ul class="reveal">
+        <li>Agents only call <strong>127.0.0.1:8788</strong>. No Utopia PAT, no Headroom URL, no DB creds.</li>
+        <li>Session may only restrict already-granted bases. Wrong base is 403.</li>
+        <li><code>remember</code> proposes. Humans approve in Enterprise Ontology.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Today">
+    <div class="slide-content">
+      <p class="q reveal">How? · now</p>
+      <h2 class="reveal">Release A is running.</h2>
+      <ul class="reveal">
+        <li>Production and Staging restricted bases.</li>
+        <li>Leak surfaces empty across search, docs, entities, and facts.</li>
+        <li>Measure A–D from the same authorized ask. No caller bypass flag.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Roadmap">
+    <div class="slide-content">
+      <p class="q reveal">How? · next</p>
+      <h2 class="reveal">Near-term roadmap</h2>
+      <div class="grid-2">
+        <article class="card reveal"><h3>Next</h3><p>Same-base object filters after leak acceptance. Broader coverage on remaining read tools.</p></article>
+        <article class="card reveal"><h3>Not claimed</h3><p>Native shell/file/HTTP audit. Headroom as memory. A third Crux ACL.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Close">
+    <div class="slide-content">
+      <p class="num reveal">01</p>
+      <h2 class="reveal">Who may know. Then how much you send.</h2>
+      <p class="reveal">Console <strong>127.0.0.1:8788</strong> · Ontology <strong>127.0.0.1:1516</strong></p>
+    </div>
+  </section>
+
+  <script>
+    class SlidePresentation {
+      constructor() {
+        this.slides = Array.from(document.querySelectorAll(".slide"));
+        this.bar = document.querySelector(".progress-bar");
+        this.navDotsContainer = document.querySelector(".nav-dots");
+        this.currentSlide = 0;
+        this.touchStartY = 0;
+        this.setupIntersectionObserver();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.setupWheelNav();
+        this.setupNavDots();
+        this.goTo(0, false);
+      }
+      setupIntersectionObserver() {
+        const io = new IntersectionObserver((entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              this.currentSlide = this.slides.indexOf(entry.target);
+              this.updateChrome();
+            }
+          });
+        }, { threshold: 0.55 });
+        this.slides.forEach((slide) => io.observe(slide));
+      }
+      setupKeyboardNav() {
+        document.addEventListener("keydown", (e) => {
+          if (["ArrowDown", "ArrowRight", "PageDown", " "].includes(e.key)) {
+            e.preventDefault();
+            this.goTo(this.currentSlide + 1);
+          }
+          if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) {
+            e.preventDefault();
+            this.goTo(this.currentSlide - 1);
+          }
+          if (e.key === "Home") this.goTo(0);
+          if (e.key === "End") this.goTo(this.slides.length - 1);
+        });
+      }
+      setupTouchNav() {
+        document.addEventListener("touchstart", (e) => {
+          this.touchStartY = e.changedTouches[0].clientY;
+        }, { passive: true });
+        document.addEventListener("touchend", (e) => {
+          const dy = this.touchStartY - e.changedTouches[0].clientY;
+          if (Math.abs(dy) < 40) return;
+          this.goTo(this.currentSlide + (dy > 0 ? 1 : -1));
+        }, { passive: true });
+      }
+      setupWheelNav() {
+        let locked = false;
+        window.addEventListener("wheel", (e) => {
+          if (locked) return;
+          if (Math.abs(e.deltaY) < 12) return;
+          locked = true;
+          this.goTo(this.currentSlide + (e.deltaY > 0 ? 1 : -1));
+          setTimeout(() => { locked = false; }, 500);
+        }, { passive: true });
+      }
+      setupNavDots() {
+        this.navDotsContainer.innerHTML = "";
+        this.slides.forEach((_, i) => {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.setAttribute("aria-label", "Go to slide " + (i + 1));
+          btn.addEventListener("click", () => this.goTo(i));
+          this.navDotsContainer.appendChild(btn);
+        });
+      }
+      updateChrome() {
+        const ratio = this.slides.length > 1 ? this.currentSlide / (this.slides.length - 1) : 0;
+        this.bar.style.width = (ratio * 100) + "%";
+        Array.from(this.navDotsContainer.children).forEach((btn, i) => {
+          if (i === this.currentSlide) btn.setAttribute("aria-current", "true");
+          else btn.removeAttribute("aria-current");
+        });
+      }
+      goTo(index, scroll) {
+        const next = Math.max(0, Math.min(this.slides.length - 1, index));
+        this.currentSlide = next;
+        if (scroll !== false) this.slides[next].scrollIntoView({ behavior: "smooth" });
+        this.updateChrome();
+      }
+    }
+    new SlidePresentation();
+  </script>
+</body>
+</html>

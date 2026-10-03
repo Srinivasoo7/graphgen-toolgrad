@@ -1,0 +1,5 @@
+{
+  "target": "cursor",
+  "languages": ["python", "rust", "typescript"],
+  "notes": "Crux packaging repo. ECC already applied via ecc-universal install --target cursor."
+}

@@ -1,6 +1,10 @@
 # graphgen-toolgrad
 
-> Private enterprise training-data factory. Converts small approved samples plus business context into expert-accepted, execution-verified training rows and QA fixtures. Does not replace source systems or fine-tune models.
+> Enterprise scenario plant: GraphGen–ToolGrad generates and verifies
+> business-grounded scenarios and training data; the included Crux control
+> plane governs access, approvals, audit, and environment isolation.
+
+> Private enterprise training-data factory. Converts small approved samples plus business context into expert-accepted, execution-verified training rows and QA fixtures. Does not replace source systems or fine-tune models. Crux is included under `platform/crux/` as the governance and agent-access plane.
 
 A successfully executed tool call is not a training row. A row is released only after the action matches the intent, the expected outcome holds, and an expert accepts it.
 

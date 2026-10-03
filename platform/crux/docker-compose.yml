@@ -1,0 +1,88 @@
+# Crux Release A packaging.
+# Enterprise Ontology (Utopia) owns knowledge and access.
+# Token Optimization (Headroom) compresses authorized model payloads.
+# Agents do not get a Headroom URL. Postgres and Headroom are not published.
+
+services:
+  db:
+    image: ${UTOPIA_DB_IMAGE:-pgvector/pgvector:pg16}
+    environment:
+      POSTGRES_USER: utopia
+      POSTGRES_PASSWORD: ${UTOPIA_DB_PASSWORD:-utopia}
+      POSTGRES_DB: utopia
+    ports:
+      - "${UTOPIA_DB_BIND:-127.0.0.1:1517}:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U utopia -d utopia"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  utopia:
+    image: ${UTOPIA_IMAGE:-ghcr.io/deeplethe/utopia:0.1.0-rc5}
+    environment:
+      UTOPIA_DATABASE_URL: postgres://utopia:${UTOPIA_DB_PASSWORD:-utopia}@db:5432/utopia
+      UTOPIA_BIND_ADDR: 0.0.0.0:1516
+      UTOPIA_JWT_SECRET: ${UTOPIA_JWT_SECRET:-}
+      UTOPIA_SECRET_KEY: ${UTOPIA_SECRET_KEY:-}
+      UTOPIA_WEB_DIST: /app/web-dist
+      UTOPIA_DATA_DIR: /app/data
+    volumes:
+      - ./data/utopia:/app/data
+      - ./docker/ontology-ui/index.html:/app/web-dist/index.html:ro
+    ports:
+      - "${UTOPIA_BIND:-127.0.0.1:1516}:1516"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  headroom:
+    build:
+      context: ./docker/headroom
+    environment:
+      HEADROOM_NO_CCR: "1"
+      HEADROOM_DISABLE_KOMPRESS: "1"
+      HEADROOM_COMPRESS_ALLOW_REMOTE: "1"
+      HEADROOM_PROXY_TOKEN: ${HEADROOM_PROXY_TOKEN:?set HEADROOM_PROXY_TOKEN}
+      HEADROOM_OFFLINE: "1"
+      HEADROOM_STATELESS: "1"
+    # No host ports. Only crux on this network may call /v1/compress.
+    expose:
+      - "8787"
+
+  crux:
+    build:
+      context: .
+      dockerfile: docker/crux/Dockerfile
+    environment:
+      UTOPIA_URL: http://utopia:1516
+      HEADROOM_URL: http://headroom:8787
+      HEADROOM_PROXY_TOKEN: ${HEADROOM_PROXY_TOKEN:?set HEADROOM_PROXY_TOKEN}
+      CRUX_ADMIN_TOKEN: ${CRUX_ADMIN_TOKEN:?set CRUX_ADMIN_TOKEN}
+      CRUX_ADMIN_EMAIL: ${CRUX_ADMIN_EMAIL:-admin@crux.local}
+      CRUX_ADMIN_PASSWORD: ${CRUX_ADMIN_PASSWORD:?set CRUX_ADMIN_PASSWORD}
+      CRUX_OWNER_ID: ${CRUX_OWNER_ID:-owner-1}
+      CRUX_DATA_DIR: /data/crux
+      CRUX_BIND: 0.0.0.0:8788
+      CRUX_MODEL: ${CRUX_MODEL:-gpt-4o}
+      CRUX_AUTO_BOOTSTRAP: "1"
+    volumes:
+      - ./data/crux:/data/crux
+    ports:
+      - "${CRUX_BIND:-127.0.0.1:8788}:8788"
+    depends_on:
+      utopia:
+        condition: service_started
+      headroom:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8788/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+
+volumes:
+  dbdata:

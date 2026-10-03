@@ -1,0 +1,47 @@
+{
+  "product": "crux",
+  "verified_at": "2026-09-06",
+  "utopia": {
+    "image": "ghcr.io/deeplethe/utopia:0.1.0-rc5",
+    "git": "https://github.com/deeplethe/utopia",
+    "commit": "33e12d9719acea50a025a202762e9bf039333c0c",
+    "ref": "dev",
+    "verified": {
+      "mcp_endpoint": "POST /api/v1/kbs/{kb_id}/mcp",
+      "mcp_read_tools": [
+        "search_chunks",
+        "get_document",
+        "search_docs",
+        "find_entities",
+        "list_rules",
+        "rule_matches",
+        "changes",
+        "entity_facts"
+      ],
+      "mcp_write_tools": ["remember"],
+      "remember_is_propose_not_commit": true,
+      "write_requires_token_write_scope_and_editor_role": true,
+      "audit_event": "mcp.tool_called",
+      "query_data_not_on_mcp": true
+    }
+  },
+  "headroom": {
+    "package": "headroom-ai[proxy]",
+    "git": "https://github.com/headroomlabs-ai/headroom",
+    "commit": "e59cf1012a2b277689555833fd221a92279f777d",
+    "ref": "main",
+    "release_a": {
+      "endpoint": "POST /v1/compress",
+      "no_ccr": true,
+      "disable_kompress": true,
+      "no_host_publish": true,
+      "bypass_via_product_config_only": true
+    }
+  },
+  "ecc": {
+    "package": "ecc-universal",
+    "version": "2.2.0",
+    "target": "cursor",
+    "git": "https://github.com/affaan-m/ECC"
+  }
+}

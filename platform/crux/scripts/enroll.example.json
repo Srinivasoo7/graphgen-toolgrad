@@ -1,0 +1,10 @@
+{
+  "owner_id": "owner-1",
+  "agent_id": "incident-bot",
+  "credential_id": "cred-incident",
+  "utopia_user_id": "replace-with-utopia-user-id",
+  "utopia_token_id": "replace-with-utopia-token-id",
+  "utopia_pat": "replace-with-pat-shown-once",
+  "granted_kb_ids": ["replace-with-production-or-staging-kb-id"],
+  "operations": ["read"]
+}

@@ -1,0 +1,12 @@
+.cursor
+.ecc
+.git
+.pytest_cache
+.venv
+venv
+data
+*.egg-info
+__pycache__
+tests
+agent-transcripts
+.env
