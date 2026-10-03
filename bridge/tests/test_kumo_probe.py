@@ -6,8 +6,10 @@ package, no weights, no GPU/CPU inference is needed.
 
 from collections import Counter
 from contextlib import contextmanager
+import os
+import tempfile
 
-from bridge import kumo_probe
+from bridge import kg_builder, kumo_probe
 from bridge.kumo_probe import KumoProbeFactory, ProbeError
 
 
@@ -111,3 +113,57 @@ def test_probe_tables_marks_generated_by():
     )
     assert out["generated_by"] == "kumo_probe"
     assert out["tables"][0]["table"] == "tickets"
+
+
+# ---------------------------------------------------------------------------
+# tables via the default (kumo) backend with a kumo-protocol stub
+# ---------------------------------------------------------------------------
+
+
+class _KumoMemorizingEstimator:
+    def fit(self, rows, target, feature_cols, feature_types):
+        from collections import Counter
+
+        self.key_col = feature_cols[0]
+        self.majority = Counter(r[target] for r in rows).most_common(1)[0][0]
+        by_key = {}
+        for r in rows:
+            by_key.setdefault(r[self.key_col], Counter())[r[target]] += 1
+        self.by_key = {k: c.most_common(1)[0][0] for k, c in by_key.items()}
+        return self
+
+    def predict(self, rows):
+        return [self.by_key.get(r[self.key_col], self.majority) for r in rows]
+
+
+def _kumo_stub_factory(task):
+    return _KumoMemorizingEstimator()
+
+
+def _ticket_rows(n=40):
+    rows = []
+    for i in range(n):
+        high = i % 2 == 0
+        rows.append({
+            "priority": "High" if high else "Low",
+            "channel": "email" if i % 3 else "phone",
+            "status": "escalated" if high else "closed",
+        })
+    return rows
+
+
+def test_build_kg_tables_default_backend_structural():
+    import csv
+
+    with tempfile.TemporaryDirectory() as d:
+        rows = _ticket_rows()
+        with open(os.path.join(d, "tickets.csv"), "w", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+            writer.writeheader()
+            writer.writerows(rows)
+        g = kg_builder.build_kg(
+            "tables", tables_dir=d, probe_factory=_kumo_stub_factory, llm_fn=None
+        )
+    assert "tickets" in g.nodes
+    edge = g.get_edge_data("tickets.priority", "tickets.status")
+    assert edge is not None and edge["relation"] == "predicts"

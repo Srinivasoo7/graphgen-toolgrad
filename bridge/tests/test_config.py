@@ -213,3 +213,34 @@ def test_scaffold_carries_new_knobs():
         raw = open(path).read()
     assert "timeout_s: 120.0" in raw
     assert "min_samples" in raw and "max_llm_calls" in raw
+
+
+# ---------------------------------------------------------------------------
+# tables backend selection (kumo default, tabpfn selectable)
+# ---------------------------------------------------------------------------
+
+
+def test_tables_backend_defaults_to_kumo():
+    cfg = from_dict(_minimal_dict(
+        domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x"}))
+    assert cfg.domain.tables_backend == "kumo"
+    validate_config(cfg)  # no problems
+
+
+def test_tables_backend_tabpfn_accepted():
+    cfg = from_dict(_minimal_dict(
+        domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x",
+                "tables_backend": "tabpfn"}))
+    assert cfg.domain.tables_backend == "tabpfn"
+    validate_config(cfg)
+
+
+def test_tables_backend_rejects_unknown():
+    try:
+        from_dict(_minimal_dict(
+            domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x",
+                    "tables_backend": "xgboost"}))
+    except ConfigError as exc:
+        assert "tables_backend" in str(exc)
+        return
+    raise AssertionError("expected ConfigError for unknown tables_backend")

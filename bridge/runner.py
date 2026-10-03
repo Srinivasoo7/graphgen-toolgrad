@@ -214,6 +214,7 @@ class FactoryRun:
             tables_dir=domain.tables_dir,
             table_targets=domain.table_targets,
             tables_work_dir=os.path.join(self.workdir, "tables_corpus"),
+            tables_backend=domain.tables_backend,
         )
         context = kg_context_exporter.export_kg_context(graph)
         kg_text = kg_context_exporter.render_kg_context(context)

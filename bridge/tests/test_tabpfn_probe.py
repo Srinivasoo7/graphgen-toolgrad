@@ -189,7 +189,8 @@ def test_build_kg_from_tables_structural():
     with tempfile.TemporaryDirectory() as d:
         _write_csv(d, "tickets.csv", _ticket_rows())
         g = kg_builder.build_kg(
-            "tables", tables_dir=d, probe_factory=_stub_factory, llm_fn=None
+            "tables", tables_dir=d, probe_factory=_stub_factory, llm_fn=None,
+            tables_backend="tabpfn",
         )
     assert "tickets" in g.nodes
     assert "tickets.priority" in g.nodes
@@ -211,7 +212,7 @@ def test_build_kg_from_tables_merges_llm_extraction():
         _write_csv(d, "tickets.csv", _ticket_rows())
         g = kg_builder.build_kg(
             "tables", tables_dir=d, probe_factory=_stub_factory,
-            llm_fn=fake_llm, tables_work_dir=work,
+            llm_fn=fake_llm, tables_work_dir=work, tables_backend="tabpfn",
         )
         assert os.path.exists(os.path.join(work, "findings.json"))
     assert "Escalation" in g.nodes
