@@ -1,19 +1,28 @@
 """Kumo Tabular probe backend (NVIDIA).
 
-Same findings contract as :mod:`bridge.tabpfn_probe`, but the estimator
-is NVIDIA's KumoTabular foundation model via the ``structured-data-models``
-library instead of TabPFN. Two practical differences drive the separate
-module:
+Measures what enterprise tables say, before the KG: Kumo is an
+*analyzer*, not a reader — it consumes a table sample and returns
+measured findings (which columns predict which outcomes, permutation
+feature importance). It writes no prose and builds no graph. The
+findings are then narrated (deterministically here; an LLM may add a
+prose brief) into documents the existing corpus KG extraction consumes
+unchanged, and a structural graph is derived from the findings
+directly.
 
-- Kumo wants raw rows (pandas + explicit stypes), not the pre-encoded
-  float lists the sklearn-shaped TabPFN path uses.
-- The weights are OpenMDW-1.1 (commercial use permitted per NVIDIA),
-  unlike TabPFN 2.5+ checkpoints — see docs/adr-tabpfn-tabular-input.md.
+Pipeline position: **probe -> KG -> ToolGrad** (``domain.kg_source:
+tables``). Privacy note: narration input is findings and aggregates
+only — raw rows never leave this module.
 
-Weights download from Hugging Face (``nvidia/Kumo-Tabular``) on first
-use; no license click-through, no token. ``size="small"`` (28M params)
-is the default: it loads in ~30s on CPU and infers a few rows per
-second, which is plenty for a probe stage over sampled tables.
+The weights are OpenMDW-1.1 (commercial use permitted per NVIDIA),
+downloaded from Hugging Face (``nvidia/Kumo-Tabular``) on first use —
+no license click-through, no token. ``size="small"`` (28M params) is
+the default: it loads in ~30s on CPU and infers a few rows per second,
+which is plenty for a probe stage over sampled tables.
+
+Kumo itself is an optional dependency, imported lazily inside
+:class:`KumoProbeFactory`. Tests inject a stub factory, so the whole
+stage is exercisable keylessly and model-lessly. A missing package is
+an explicit :class:`ProbeError`, never a silent pass.
 
 Environment note: on hosts where the ``no_proxy``/``NO_PROXY`` variables
 contain bracketed IPv6 literals (``[::1]``), the vendored ``httpx2``
@@ -26,7 +35,7 @@ from __future__ import annotations
 import random
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
-from bridge.tabpfn_probe import ProbeError, _score, _split, column_stats
+from bridge.probe_common import ProbeError, _score, _split, column_stats
 
 # A factory maps a task ("classification" | "regression") to an estimator
 # with fit(rows, target, feature_cols, feature_types) / predict(rows)
@@ -245,7 +254,7 @@ def probe_table(
     num_estimators: int = 8,
 ) -> Dict[str, Any]:
     """Probe one table with Kumo Tabular. Same findings shape as
-    :func:`bridge.tabpfn_probe.probe_table`."""
+    :func:`bridge.kumo_probe.probe_tables`."""
     if not rows:
         raise ProbeError(f"table {name!r} has no rows")
     factory = probe_factory or KumoProbeFactory(

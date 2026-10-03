@@ -214,33 +214,31 @@ def test_scaffold_carries_new_knobs():
     assert "timeout_s: 120.0" in raw
     assert "min_samples" in raw and "max_llm_calls" in raw
 
-
 # ---------------------------------------------------------------------------
-# tables backend selection (kumo default, tabpfn selectable)
+# kg_source: tables
 # ---------------------------------------------------------------------------
 
 
-def test_tables_backend_defaults_to_kumo():
-    cfg = from_dict(_minimal_dict(
-        domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x"}))
-    assert cfg.domain.tables_backend == "kumo"
-    validate_config(cfg)  # no problems
-
-
-def test_tables_backend_tabpfn_accepted():
-    cfg = from_dict(_minimal_dict(
-        domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x",
-                "tables_backend": "tabpfn"}))
-    assert cfg.domain.tables_backend == "tabpfn"
-    validate_config(cfg)
-
-
-def test_tables_backend_rejects_unknown():
+def test_config_tables_source_requires_tables_dir():
+    d = _minimal_dict()
+    d["domain"] = {"name": "test", "kg_source": "tables", "tables_dir": ""}
     try:
-        from_dict(_minimal_dict(
-            domain={"name": "t", "kg_source": "tables", "tables_dir": "./data/x",
-                    "tables_backend": "xgboost"}))
+        from_dict(d)
     except ConfigError as exc:
-        assert "tables_backend" in str(exc)
-        return
-    raise AssertionError("expected ConfigError for unknown tables_backend")
+        assert "tables_dir is required" in str(exc)
+    else:
+        raise AssertionError("from_dict should reject missing tables_dir")
+
+
+def test_config_tables_source_parses_targets():
+    d = _minimal_dict()
+    d["domain"] = {
+        "name": "test",
+        "kg_source": "tables",
+        "tables_dir": "./data",
+        "table_targets": {"tickets": "status"},
+    }
+    cfg = from_dict(d)
+    assert validate_config(cfg) == []
+    assert cfg.domain.kg_source == "tables"
+    assert cfg.domain.table_targets == {"tickets": "status"}

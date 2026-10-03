@@ -15,10 +15,8 @@ chosen by ``domain.kg_source`` in the run config:
   ``{entities: [{name, type, description}], relations: [{head, relation,
   tail, description}]}``. Full control, zero inference.
 - ``tables`` — measured from the enterprise's own data tables (CSV / JSON
-  in ``tables_dir``) by a tabular-FM probe stage: Kumo Tabular by
-  default (:mod:`bridge.kumo_probe`), TabPFN selectable via
-  ``domain.tables_backend`` (:mod:`bridge.tabpfn_probe`;
-  see ``docs/adr-tabpfn-tabular-input.md``).
+  in ``tables_dir``) by the Kumo Tabular probe stage
+  (:mod:`bridge.kumo_probe`; see ``docs/adr-tabular-probe.md``).
   A structural graph (tables, columns, measured ``predicts`` relations)
   is derived from the probe findings; when an LLM is available the
   findings are also narrated into documents and mined via the corpus
@@ -310,20 +308,6 @@ def build_kg_from_corpus(
 # ---------------------------------------------------------------------------
 
 
-def _default_probe_factory(backend: str):
-    """Probe factory for a tables backend name. Imported lazily so the
-    bridge never requires either model package unless tables are probed."""
-    if backend == "kumo":
-        from bridge.kumo_probe import KumoProbeFactory
-
-        return KumoProbeFactory()
-    if backend == "tabpfn":
-        from bridge.tabpfn_probe import TabPFNProbeFactory
-
-        return TabPFNProbeFactory()
-    raise KGBuildError(f"unknown tables_backend: {backend!r} (kumo | tabpfn)")
-
-
 def build_kg_from_tables(
     tables_dir: str,
     llm_fn=None,
@@ -331,39 +315,29 @@ def build_kg_from_tables(
     table_targets: Optional[Dict[str, str]] = None,
     work_dir: str = "",
     max_entities: int = 200,
-    backend: str = "kumo",
 ) -> nx.Graph:
-    """Build a KG from enterprise data tables via a tabular-FM probe stage.
+    """Build a KG from enterprise data tables via the Kumo probe stage.
 
     Structural graph first (tables, columns, measured ``predicts``
     relations, straight from the findings — no LLM needed); when ``llm_fn``
     is available, the findings are narrated into a corpus directory and
     mined with the corpus extractor, and that graph is merged in.
 
-    ``probe_factory``, when given, must implement the selected backend's
-    estimator protocol: sklearn-shaped ``fit(X, y)`` / ``predict(X)`` on
-    encoded lists for ``tabpfn``, raw-row ``fit(rows, target,
-    feature_cols, feature_types)`` / ``predict(rows)`` for ``kumo``.
+    ``probe_factory``, when given, must implement the Kumo estimator
+    protocol: raw-row ``fit(rows, target, feature_cols, feature_types)``
+    / ``predict(rows)``.
     """
-    from bridge import tabpfn_probe
-
+    from bridge import kumo_probe
+    from bridge.probe_common import load_tables_dir, write_tables_corpus
     if not os.path.isdir(tables_dir):
         raise KGBuildError(f"tables_dir not found: {tables_dir}")
-    tables = tabpfn_probe.load_tables_dir(tables_dir)
+    tables = load_tables_dir(tables_dir)
     if not tables:
         raise KGBuildError(f"no .csv/.json tables in {tables_dir}")
-    findings: Dict[str, Any]
-    factory = probe_factory or _default_probe_factory(backend)
-    if backend == "kumo":
-        from bridge import kumo_probe
-
-        findings = kumo_probe.probe_tables(
-            tables, targets_by_table=table_targets, probe_factory=factory
-        )
-    else:
-        findings = tabpfn_probe.probe_tables(
-            tables, targets_by_table=table_targets, probe_factory=factory
-        )
+    factory = probe_factory or kumo_probe.KumoProbeFactory()
+    findings = kumo_probe.probe_tables(
+        tables, targets_by_table=table_targets, probe_factory=factory
+    )
     g = nx.Graph()
     for tf in findings["tables"]:
         tkey = _add_entity(
@@ -398,7 +372,7 @@ def build_kg_from_tables(
         import tempfile
 
         corpus_dir = tempfile.mkdtemp(prefix="tables_corpus_")
-    tabpfn_probe.write_tables_corpus(findings, corpus_dir, llm_fn=llm_fn)
+    write_tables_corpus(findings, corpus_dir, llm_fn=llm_fn)
     if llm_fn is not None:
         extracted = build_kg_from_corpus(
             corpus_dir, llm_fn, max_entities=max_entities
@@ -436,7 +410,6 @@ def build_kg(
     probe_factory=None,
     table_targets: Optional[Dict[str, str]] = None,
     tables_work_dir: str = "",
-    tables_backend: str = "kumo",
 ) -> nx.Graph:
     """Build the domain KG from the configured source."""
     if source == "tools":
@@ -464,6 +437,5 @@ def build_kg(
             table_targets=table_targets,
             work_dir=tables_work_dir,
             max_entities=max_entities,
-            backend=tables_backend,
         )
     raise KGBuildError(f"unknown kg_source: {source!r}")

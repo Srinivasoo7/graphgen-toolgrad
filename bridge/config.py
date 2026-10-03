@@ -65,7 +65,6 @@ class DomainConfig:
     spec_file: str = ""  # kg_source == "spec"
     tables_dir: str = ""  # kg_source == "tables": CSV/JSON data tables
     table_targets: Dict[str, str] = field(default_factory=dict)  # table -> target column
-    tables_backend: str = "kumo"  # kg_source == "tables": kumo | tabpfn
     max_entities: int = 200
 
 
@@ -202,7 +201,6 @@ def from_dict(raw: dict) -> RunConfig:
                 str(k): str(v)
                 for k, v in (domain.get("table_targets", {}) or {}).items()
             },
-            tables_backend=str(domain.get("tables_backend", "kumo")),
             max_entities=_int(domain, "max_entities", 200),
         ),
         generation=GenerationConfig(
@@ -283,8 +281,6 @@ def validate_config(cfg: RunConfig) -> List[str]:
         problems.append("domain.spec_file is required when kg_source='spec'")
     if d.kg_source == "tables" and not d.tables_dir:
         problems.append("domain.tables_dir is required when kg_source='tables'")
-    if d.tables_backend not in ("kumo", "tabpfn"):
-        problems.append("domain.tables_backend must be 'kumo' or 'tabpfn'")
     if d.max_entities < 1:
         problems.append("domain.max_entities must be >= 1")
     g = cfg.generation
@@ -373,13 +369,11 @@ domain:
   #   tools  — from MCP tool schemas alone (no LLM, no docs needed)
   #   corpus — LLM-extracted from markdown/text docs in corpus_dir
   #   spec   — explicit entities/relations YAML (see docs/product.md)
-  #   tables — tabular-FM probe over CSV/JSON data tables in tables_dir
-  #            (Kumo Tabular by default; TabPFN needs the tabpfn package;
-  #            see docs/adr-tabpfn-tabular-input.md)
+  #   tables — Kumo Tabular probe over CSV/JSON data tables in tables_dir
+  #            (see docs/adr-tabular-probe.md)
   kg_source: tools
   corpus_dir: ./docs/{name}
   tables_dir: ./data/{name}
-  tables_backend: kumo   # kumo | tabpfn
   # table_targets: {{tickets: status}}   # optional: table -> outcome column
   max_entities: 200
 

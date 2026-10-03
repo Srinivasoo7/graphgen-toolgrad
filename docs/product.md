@@ -100,17 +100,15 @@ relations:
 
 When the business context lives in databases rather than documents,
 point the factory at CSV/JSON table samples. A tabular foundation-model
-probe measures which columns predict which outcomes; those findings
-ground the KG (structural graph + optional LLM narration), per
-`docs/adr-tabpfn-tabular-input.md`. Kumo Tabular is the default backend
-(OpenMDW-1.1 weights, no token); TabPFN is selectable.
+probe (Kumo Tabular) measures which columns predict which outcomes; those
+findings ground the KG (structural graph + optional LLM narration), per
+`docs/adr-tabular-probe.md`.
 
 ```yaml
 domain:
   name: support
   kg_source: tables
   tables_dir: ./data/support
-  tables_backend: kumo   # kumo | tabpfn
   table_targets: {tickets: status}   # optional: table -> outcome column
 ```
 
