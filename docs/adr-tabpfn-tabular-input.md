@@ -33,6 +33,28 @@ Implemented (this repo, same day, at Sri's go-ahead):
   package installed + a checkpoint choice), and the post-fix ITSM
   re-run (sequencing item 2).
 
+Addendum (2026-10-03): Kumo Tabular backend validated live.
+
+- At Sri's direction the team also validated NVIDIA's Kumo Tabular
+  (released Sep 29, 2026) as a probe backend: `bridge/kumo_probe.py`
+  mirrors the TabPFN findings contract with raw-row estimators.
+- Live run on CPU (this box has no GPU): small/28M checkpoint,
+  OpenMDW-1.1 weights confirmed on the Hugging Face listing itself,
+  no license click-through, no token. 400-row synthetic tickets
+  table with a known noisy priority->status relationship: holdout
+  accuracy 0.80 (Bayes-optimal for the injected noise), permutation
+  importance correctly isolated `priority` as the only predictive
+  feature (0.325; all noise columns 0.0), TSTR parity 1.0.
+- Debugging notes for reproducers: the sdm TableTensor blocks raw
+  aten ops, so predictions are decoded via the output columns, which
+  the model names by class value; and bracketed IPv6 literals in
+  `no_proxy` break the vendored httpx2 URL parser during the weight
+  download (export cleaned values first).
+- Commercial read: Kumo's OpenMDW-1.1 weights are the licensing-clean
+  path for a commercial product; TabPFN remains the ADR's named
+  backend but needs a v2 checkpoint pin or enterprise license, plus
+  the PriorLabs token that is still outstanding.
+
 ## Context
 
 The product thesis (whiteboard, 2026-09-30) is two failure loops:
